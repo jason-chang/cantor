@@ -1,0 +1,12 @@
+{
+  "name": "Laradock",
+  "dockerComposeFile": "../docker-compose.yml",
+  "remoteUser": "cantor",
+  "runServices": [
+    "nginx"
+  ],
+  "service": "workspace",
+  "workspaceFolder": "/var/www",
+  "shutdownAction": "stopCompose",
+  "postCreateCommand": "uname -a"
+}
