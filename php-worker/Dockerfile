@@ -317,6 +317,6 @@ RUN php -v | head -n 1 | grep -q "PHP ${PHP_VERSION}."
 
 # Clean up
 RUN rm /var/cache/apk/* \
-    && mkdir -p /var/www
+    && mkdir -p /srv/services
 
 WORKDIR /etc/supervisor/conf.d/

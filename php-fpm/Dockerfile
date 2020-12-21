@@ -18,6 +18,8 @@ FROM php:${CANTOR_PHP_VERSION}-fpm
 # Set Environment Variables
 ENV DEBIAN_FRONTEND noninteractive
 
+USER root
+ARG CANTOR_PHP_VERSION
 #
 #--------------------------------------------------------------------------
 # Software's Installation
@@ -48,7 +50,7 @@ RUN set -eux; \
     if [ ${CANTOR_PHP_VERSION} = "7.4" ]; then \
         apt-get install -y --no-install-recommends \
                     libonig-dev; \
-    ;fi
+    fi;
 
 RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
@@ -74,8 +76,8 @@ RUN set -eux; \
                 --with-webp-dir=/usr/lib \
                 --with-freetype-dir=/usr/include/freetype2; \
         docker-php-ext-install gd; \
-        php -r 'var_dump(gd_info());'
-    ;else
+        php -r 'var_dump(gd_info());'; \
+    else \
         # Install the PHP gd library in php 7.4 / 8.0
         docker-php-ext-configure gd \
                 --prefix=/usr \
@@ -83,8 +85,8 @@ RUN set -eux; \
                 --with-webp \
                 --with-freetype; \
         docker-php-ext-install gd; \
-        php -r 'var_dump(gd_info());' \
-    ;fi
+        php -r 'var_dump(gd_info());'; \
+    fi;
 
 # Set Environment Variables
 ENV DEBIAN_FRONTEND noninteractive
@@ -860,7 +862,7 @@ RUN if [ ${INSTALL_FAKETIME} = true ]; then \
 ARG LOCALE=POSIX
 ENV LC_ALL ${LOCALE}
 
-WORKDIR /var/www
+WORKDIR /srv/services
 
 CMD ["php-fpm"]
 

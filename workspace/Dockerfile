@@ -4,7 +4,6 @@
 #--------------------------------------------------------------------------
 #
 
-ARG CANTOR_PHP_VERSION
 FROM phusion/baseimage:0.11
 
 RUN DEBIAN_FRONTEND=noninteractive
@@ -15,6 +14,30 @@ ENV LC_ALL=en_US.UTF-8
 ENV LC_CTYPE=en_US.UTF-8
 ENV LANG=en_US.UTF-8
 ENV TERM xterm
+
+# Start as root
+USER root
+
+ARG CANTOR_PHP_VERSION
+###########################################################################
+# Laradock non-root user:
+###########################################################################
+
+# Add a non-root user to prevent files being created with root permissions on host machine.
+ARG PUID=1000
+ENV PUID ${PUID}
+ARG PGID=1000
+ENV PGID ${PGID}
+
+ARG CHANGE_SOURCE=false
+ARG UBUNTU_SOURCE
+COPY ./sources.sh /tmp/sources.sh
+
+RUN if [ ${CHANGE_SOURCE} = true ]; then \
+    chmod +x /tmp/sources.sh && \
+    /bin/sh -c /tmp/sources.sh && \
+    rm -rf /tmp/sources.sh \
+;fi
 
 # Add the "PHP 7" ppa
 RUN apt-get install -y software-properties-common && \
@@ -61,7 +84,6 @@ RUN apt-get install -y --allow-downgrades --allow-remove-essential \
         "php${CANTOR_PHP_VERSION}-mbstring" \
         "php${CANTOR_PHP_VERSION}-mysql" \
         "php${CANTOR_PHP_VERSION}-pgsql" \
-        "php${CANTOR_PHP_VERSION}-sqlite" \
         "php${CANTOR_PHP_VERSION}-sqlite3" \
         "php${CANTOR_PHP_VERSION}-zip" \
         "php${CANTOR_PHP_VERSION}-bcmath" \
@@ -75,7 +97,7 @@ RUN apt-get install -y --allow-downgrades --allow-remove-essential \
 
 # Install composer and add its bin to the PATH.
 RUN curl -s http://getcomposer.org/installer | php && \
-    echo "export PATH=${PATH}:/var/www/vendor/bin" >> ~/.bashrc && \
+    echo "export PATH=${PATH}:/srv/services/vendor/bin" >> ~/.bashrc && \
     mv composer.phar /usr/local/bin/composer
 
 # Source the bash
@@ -84,38 +106,6 @@ RUN . ~/.bashrc
 # Set Environment Variables
 ENV DEBIAN_FRONTEND noninteractive
 
-# If you're in China, or you need to change sources, will be set CHANGE_SOURCE to true in .env.
-
-ARG CHANGE_SOURCE=false
-RUN if [ ${CHANGE_SOURCE} = true ]; then \
-    # Change application source from deb.debian.org to aliyun source
-    sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list && \
-    sed -i 's/security.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list && \
-    sed -i 's/security-cdn.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list \
-;fi
-
-# Start as root
-USER root
-
-###########################################################################
-# Laradock non-root user:
-###########################################################################
-
-# Add a non-root user to prevent files being created with root permissions on host machine.
-ARG PUID=1000
-ENV PUID ${PUID}
-ARG PGID=1000
-ENV PGID ${PGID}
-
-ARG CHANGE_SOURCE=false
-ARG UBUNTU_SOURCE
-COPY ./sources.sh /tmp/sources.sh
-
-RUN if [ ${CHANGE_SOURCE} = true ]; then \
-    chmod +x /tmp/sources.sh && \
-    /bin/sh -c /tmp/sources.sh && \
-    rm -rf /tmp/sources.sh \
-;fi
 
 # always run apt update when start and after add new source list, then clean up at end.
 RUN set -xe; \
@@ -247,7 +237,7 @@ RUN echo "" >> ~/.bashrc && \
 USER cantor
 
 RUN echo "" >> ~/.bashrc && \
-    echo 'export PATH="/var/www/vendor/bin:$PATH"' >> ~/.bashrc
+    echo 'export PATH="/srv/services/vendor/bin:$PATH"' >> ~/.bashrc
 
 ###########################################################################
 # Crontab
@@ -555,6 +545,9 @@ RUN if [ ${INSTALL_INOTIFY} = true ]; then \
 ARG INSTALL_AST=false
 ARG AST_VERSION=1.0.3
 ENV AST_VERSION ${AST_VERSION}
+
+RUN echo "================================================="
+RUN echo "$INSTALL_AST"
 
 RUN if [ ${INSTALL_AST} = true ]; then \
     # AST extension requires PHP 7.0.0 or newer
@@ -1391,4 +1384,4 @@ RUN apt-get clean && \
     rm /var/log/lastlog /var/log/faillog
 
 # Set default work directory
-WORKDIR /var/www
+WORKDIR /srv/services

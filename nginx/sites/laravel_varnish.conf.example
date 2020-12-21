@@ -53,7 +53,7 @@ server {
     listen 81;
     listen [::]:81;
 
-    root /var/www/laravel.test/www;
+    root /srv/services/laravel.test/www;
 
     index index.php index.html index.htm;
 

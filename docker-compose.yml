@@ -201,8 +201,6 @@ services:
       environment:
         - PHP_IDE_CONFIG=${PHP_IDE_CONFIG}
         - FAKETIME=${PHP_FPM_FAKETIME}
-      depends_on:
-        - workspace
       networks:
         - backend
 
@@ -238,8 +236,6 @@ services:
       volumes:
         - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
         - ./php-worker/supervisord.d:/etc/supervisord.d
-      depends_on:
-        - workspace
       extra_hosts:
         - "dockerhost:${DOCKER_HOST_IP}"
       networks:
