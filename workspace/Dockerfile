@@ -1381,7 +1381,11 @@ RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     rm /var/log/lastlog /var/log/faillog
 
-ENTRYPOINT ["/bin/chmod", "-R", "644", "/etc/cron.d"]
+COPY ./entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+CMD ["/usr/local/bin/docker-entrypoint.sh"]
 
 # Set default work directory
 WORKDIR /srv/services
