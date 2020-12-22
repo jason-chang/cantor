@@ -1383,3 +1383,5 @@ RUN apt-get clean && \
 
 # Set default work directory
 WORKDIR /srv/services
+
+ENTRYPOINT ["/bin/chmod", "-R", "644", "/etc/cron.d"]
