@@ -1,1 +1,1 @@
-* * * * * cantor /usr/bin/php /srv/services/artisan schedule:run >> /dev/null 2>&1
+* * * * * cantor /usr/bin/php /srv/services/time-words-server/artisan schedule:run >> /dev/null 2>&1
