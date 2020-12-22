@@ -240,14 +240,6 @@ RUN echo "" >> ~/.bashrc && \
     echo 'export PATH="/srv/services/vendor/bin:$PATH"' >> ~/.bashrc
 
 ###########################################################################
-# Crontab
-###########################################################################
-
-USER root
-
-RUN chmod -R 644 /etc/cron.d
-
-###########################################################################
 # Drush:
 ###########################################################################
 
@@ -1366,7 +1358,14 @@ RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
 	  echo "" >> ~/.zshrc \
 ;fi
 
+###########################################################################
+# Crontab
+###########################################################################
+
 USER root
+
+RUN chown root:root -R /etc/cron.d
+RUN chmod -R 644 /etc/cron.d
 
 #
 #--------------------------------------------------------------------------
@@ -1380,12 +1379,6 @@ USER root
 RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     rm /var/log/lastlog /var/log/faillog
-
-COPY ./entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-CMD ["/usr/local/bin/docker-entrypoint.sh"]
 
 # Set default work directory
 WORKDIR /srv/services
