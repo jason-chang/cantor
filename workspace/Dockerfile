@@ -1381,7 +1381,7 @@ RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     rm /var/log/lastlog /var/log/faillog
 
+ENTRYPOINT ["/bin/chmod", "-R", "644", "/etc/cron.d"]
+
 # Set default work directory
 WORKDIR /srv/services
-
-ENTRYPOINT ["/bin/chmod", "-R", "644", "/etc/cron.d"]
