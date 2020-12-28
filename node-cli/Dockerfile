@@ -22,7 +22,6 @@ RUN if [ ${USE_MIRRORS} = true ]; then \
   npm set phantomjs_cdnurl https://npm.taobao.org/mirrors/phantomjs; \
   npm set selenium_cdnurl https://npm.taobao.org/mirrors/selenium; \
   npm set node_inspector_cdnurl https://npm.taobao.org/mirrors/node-inspector; \
-
   yarn config set registry https://registry.npm.taobao.org; \
   yarn config set disturl https://npm.taobao.org/dist; \
   yarn config set sass_binary_site https://npm.taobao.org/mirrors/node-sass; \
