@@ -245,6 +245,10 @@ PHP_WORKER_INSTALL_XMLRPC=false
 PHP_WORKER_PUID=1000
 PHP_WORKER_PGID=1000
 
+### NODE_CLI ############################################
+
+NODE_CLI_USE_MIRRORS=false
+
 ### NGINX #################################################
 
 NGINX_HOST_HTTP_PORT=80

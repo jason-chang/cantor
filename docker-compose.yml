@@ -228,6 +228,20 @@ services:
       networks:
         - backend
 
+### NODE Cli ############################################
+    node-cli:
+      build:
+        context: ./node-cli
+        args:
+          - USE_MIRRORS=${NODE_CLI_USE_MIRRORS}
+      volumes:
+        - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+      extra_hosts:
+        - "dockerhost:${DOCKER_HOST_IP}"
+      tty: true
+      networks:
+        - backend
+
 ### NGINX Server #########################################
     nginx:
       build:
