@@ -290,3 +290,15 @@ services:
         - "${REDIS_PORT}:6379"
       networks:
         - backend
+
+### Verdaccio ################################################
+    verdaccio:
+      build: ./verdaccio
+      volumes:
+        - ${DATA_PATH_HOST}/verdaccio/storage:/verdaccio/storage
+        - ${DATA_PATH_HOST}/verdaccio/plugins:/verdaccio/plugins
+        - ./verdaccio:/verdaccio/conf
+      ports:
+        - "${VERDACCIO_PORT}:4873"
+      networks:
+        - backend
