@@ -1,3 +1,3 @@
 FROM snowdreamtech/frps
 
-EXPOSE 7000
+EXPOSE 7000 7500 ${FRPS_EXPOSE_PORTS}

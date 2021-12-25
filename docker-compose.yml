@@ -307,9 +307,12 @@ services:
     frps:
       build:
         context: ./frps
+        args:
+          - FRPS_EXPOSE_PORTS=${FRPS_EXPOSE_PORTS}
       volumes:
         - ./frps/frps.ini:/etc/frp/frps.ini
       ports:
         - "${FRPS_PORT}:7000"
+        - "${FRPS_DASHBOARD_PORTS}:7500"
       networks:
         - backend

@@ -276,3 +276,5 @@ VERDACCIO_PORT=4873
 ### FRP #################################################
 
 FRPS_PORT=7000
+FRPS_DASHBOARD_PORTS=7500
+FRPS_EXPOSE_PORTS=32400
