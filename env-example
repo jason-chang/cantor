@@ -276,4 +276,3 @@ VERDACCIO_PORT=4873
 ### FRP #################################################
 
 FRPS_DASHBOARD_PWD=admin
-FRPS_EXPOSE_POSTS="7000 7500"
