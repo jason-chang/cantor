@@ -309,7 +309,8 @@ services:
         context: ./frps
         args:
           - FRPS_DASHBOARD_PWD=${FRPS_DASHBOARD_PWD}
+          - FRPS_EXPOSE_POSTS=${FRPS_EXPOSE_POSTS}
       volumes:
         - ./frps/frps.ini:/etc/frp/frps.ini
       networks:
-        - host
+        - backend
