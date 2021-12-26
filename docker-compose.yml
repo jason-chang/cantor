@@ -311,6 +311,8 @@ services:
           - FRPS_DASHBOARD_PWD=${FRPS_DASHBOARD_PWD}
       volumes:
         - ./frps/frps.ini:/etc/frp/frps.ini
+      networks:
+        - backend
       expose:
         - "7000"
         - "7500"
