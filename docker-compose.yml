@@ -309,8 +309,7 @@ services:
         context: ./frps
         args:
           - FRPS_DASHBOARD_PWD=${FRPS_DASHBOARD_PWD}
-      volumes:
-        - ./frps/frps.ini:/etc/frp/frps.ini
+          - FRPS_AUTH_TOKEN=${FRPS_AUTH_TOKEN}
       networks:
         - backend
       ports:
