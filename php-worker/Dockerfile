@@ -81,12 +81,6 @@ RUN if [ ${INSTALL_GMP} = true ]; then \
    && docker-php-ext-install gmp \
 ;fi
 
-#Install SOAP package:
-ARG INSTALL_SOAP=false
-RUN if [ ${INSTALL_SOAP} = true ]; then \
-    docker-php-ext-install soap \
-;fi
-
 #Install BCMath package:
 ARG INSTALL_BCMATH=false
 RUN if [ ${INSTALL_BCMATH} = true ]; then \
@@ -146,27 +140,6 @@ RUN if [ ${INSTALL_AUDIOWAVEFORM} = true ]; then \
 ;fi
 
 WORKDIR /usr/src
-
-# Install Phalcon ext
-ARG INSTALL_PHALCON=false
-ARG PHALCON_VERSION
-ENV PHALCON_VERSION ${PHALCON_VERSION}
-
-RUN if [ $INSTALL_PHALCON = true ]; then \
-    apk --update add unzip gcc make re2c bash\
-    && git clone https://github.com/jbboehr/php-psr.git \
-    && cd php-psr \
-    && phpize \
-    && ./configure \
-    && make \
-    && make test \
-    && make install \
-    && curl -L -o /tmp/cphalcon.zip https://github.com/phalcon/cphalcon/archive/v${PHALCON_VERSION}.zip \
-    && unzip -d /tmp/ /tmp/cphalcon.zip \
-    && cd /tmp/cphalcon-${PHALCON_VERSION}/build \
-    && ./install \
-    && rm -rf /tmp/cphalcon* \
-;fi
 
 ARG INSTALL_GHOSTSCRIPT=false
 RUN if [ $INSTALL_GHOSTSCRIPT = true ]; then \

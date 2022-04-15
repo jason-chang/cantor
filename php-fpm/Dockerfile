@@ -4,7 +4,7 @@
 #--------------------------------------------------------------------------
 #
 # To edit the 'php-fpm' base Image, visit its repository on Github
-#    https://github.com/Laradock/php-fpm
+#    https://github.com/Cantor/php-fpm
 #
 # To change its version, see the available Tags on the Docker Hub:
 #    https://hub.docker.com/r/cantor/php-fpm/tags/
@@ -115,7 +115,7 @@ RUN set -xe; \
       # Mandatory Software's such as ("mcrypt", "pdo_mysql", "libssl-dev", ....)
       # are installed on the base image 'cantor/php-fpm' image. If you want
       # to add more Software's or remove existing one, you need to edit the
-      # base image (https://github.com/Laradock/php-fpm).
+      # base image (https://github.com/Cantor/php-fpm).
       #
       # next lines are here becase there is no auto build on dockerhub see https://github.com/cantor/cantor/pull/1903#issuecomment-463142846
       libzip-dev zip unzip && \
@@ -132,7 +132,7 @@ RUN set -xe; \
 # Optional Software's will only be installed if you set them to `true`
 # in the `docker-compose.yml` before the build.
 # Example:
-#   - INSTALL_SOAP=true
+#   - INSTALL_BZ2=true
 #
 
 ###########################################################################
@@ -187,19 +187,6 @@ ARG INSTALL_FAKETIME=false
 
 RUN if [ ${INSTALL_FAKETIME} = true ]; then \
     apt-get install -y libfaketime \
-;fi
-
-###########################################################################
-# SOAP:
-###########################################################################
-
-ARG INSTALL_SOAP=false
-
-RUN if [ ${INSTALL_SOAP} = true ]; then \
-    # Install the soap extension
-    rm /etc/apt/preferences.d/no-debian-php && \
-    apt-get -y install libxml2-dev php-soap && \
-    docker-php-ext-install soap \
 ;fi
 
 ###########################################################################
@@ -526,34 +513,6 @@ ARG INSTALL_CALENDAR=false
 RUN if [ ${INSTALL_CALENDAR} = true ]; then \
     docker-php-ext-configure calendar && \
     docker-php-ext-install calendar \
-;fi
-
-###########################################################################
-# Phalcon:
-###########################################################################
-
-ARG INSTALL_PHALCON=false
-ARG CANTOR_PHALCON_VERSION
-ENV CANTOR_PHALCON_VERSION ${CANTOR_PHALCON_VERSION}
-
-# Copy phalcon configration
-COPY ./phalcon.ini /usr/local/etc/php/conf.d/phalcon.ini.disable
-
-RUN if [ $INSTALL_PHALCON = true ]; then \
-    apt-get update && apt-get install -y unzip libpcre3-dev gcc make re2c git automake autoconf\
-    && git clone https://github.com/jbboehr/php-psr.git \
-    && cd php-psr \
-    && phpize \
-    && ./configure \
-    && make \
-    && make test \
-    && make install \
-    && curl -L -o /tmp/cphalcon.zip https://github.com/phalcon/cphalcon/archive/v${CANTOR_PHALCON_VERSION}.zip \
-    && unzip -d /tmp/ /tmp/cphalcon.zip \
-    && cd /tmp/cphalcon-${CANTOR_PHALCON_VERSION}/build \
-    && ./install \
-    && mv /usr/local/etc/php/conf.d/phalcon.ini.disable /usr/local/etc/php/conf.d/phalcon.ini \
-    && rm -rf /tmp/cphalcon* \
 ;fi
 
 ###########################################################################

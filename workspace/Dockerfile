@@ -20,7 +20,7 @@ USER root
 
 ARG CANTOR_PHP_VERSION
 ###########################################################################
-# Laradock non-root user:
+# Cantor non-root user:
 ###########################################################################
 
 # Add a non-root user to prevent files being created with root permissions on host machine.
@@ -79,7 +79,6 @@ RUN apt-get install -y --allow-downgrades --allow-remove-essential \
         "php${CANTOR_PHP_VERSION}-common" \
         "php${CANTOR_PHP_VERSION}-curl" \
         "php${CANTOR_PHP_VERSION}-intl" \
-        "php${CANTOR_PHP_VERSION}-json" \
         "php${CANTOR_PHP_VERSION}-xml" \
         "php${CANTOR_PHP_VERSION}-mbstring" \
         "php${CANTOR_PHP_VERSION}-mysql" \
@@ -124,7 +123,7 @@ RUN set -xe; \
       # Mandatory Software's such as ("php-cli", "git", "vim", ....) are
       # installed on the base image 'cantor/workspace' image. If you want
       # to add more Software's or remove existing one, you need to edit the
-      # base image (https://github.com/Laradock/workspace).
+      # base image (https://github.com/Cantor/workspace).
       #
       # next lines are here because there is no auto build on dockerhub see https://github.com/cantor/cantor/pull/1903#issuecomment-463142846
       libzip-dev zip unzip \
@@ -297,19 +296,6 @@ RUN if [ ${INSTALL_SSH2} = true ]; then \
 ;fi
 
 ###########################################################################
-# SOAP:
-###########################################################################
-
-USER root
-
-ARG INSTALL_SOAP=false
-
-RUN if [ ${INSTALL_SOAP} = true ]; then \
-  # Install the PHP SOAP extension
-  apt-get -y install libxml2-dev php${CANTOR_PHP_VERSION}-soap \
-;fi
-
-###########################################################################
 # XSL:
 ###########################################################################
 
@@ -353,19 +339,6 @@ ARG INSTALL_IMAP=false
 RUN if [ ${INSTALL_IMAP} = true ]; then \
     apt-get install -y php${CANTOR_PHP_VERSION}-imap \
 ;fi
-
-###########################################################################
-# Subversion:
-###########################################################################
-
-USER root
-
-ARG INSTALL_SUBVERSION=false
-
-RUN if [ ${INSTALL_SUBVERSION} = true ]; then \
-    apt-get install -y subversion \
-;fi
-
 
 ###########################################################################
 # xDebug:
@@ -518,20 +491,17 @@ RUN if [ ${INSTALL_INOTIFY} = true ]; then \
 ###########################################################################
 
 ARG INSTALL_AST=false
-ARG AST_VERSION=1.0.3
+ARG AST_VERSION=1.0.16
 ENV AST_VERSION ${AST_VERSION}
 
 RUN echo "================================================="
 RUN echo "$INSTALL_AST"
 
 RUN if [ ${INSTALL_AST} = true ]; then \
-    # AST extension requires PHP 7.0.0 or newer
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") != "5" ]; then \
-        # Install AST extension
-        printf "\n" | pecl -q install ast-${AST_VERSION} && \
-        echo "extension=ast.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/ast.ini && \
-        phpenmod -v ${CANTOR_PHP_VERSION} -s cli ast \
-    ;fi \
+    # Install AST extension
+    printf "\n" | pecl -q install ast-${AST_VERSION} && \
+    echo "extension=ast.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/ast.ini && \
+    phpenmod -v ${CANTOR_PHP_VERSION} -s cli ast \
 ;fi
 
 ###########################################################################
@@ -737,61 +707,6 @@ RUN if [ ${INSTALL_SYMFONY} = true ]; then \
 ;fi
 
 ###########################################################################
-# PYTHON2:
-###########################################################################
-
-ARG INSTALL_PYTHON=false
-
-RUN if [ ${INSTALL_PYTHON} = true ]; then \
-  apt-get -y install python python-pip python-dev build-essential  \
-  && python -m pip install --upgrade pip  \
-  && python -m pip install --upgrade virtualenv \
-;fi
-
-###########################################################################
-# PYTHON3:
-###########################################################################
-
-ARG INSTALL_PYTHON3=false
-
-RUN if [ ${INSTALL_PYTHON3} = true ]; then \
-  apt-get -y install python3 python3-pip python3-dev build-essential  \
-  && python3 -m pip install --upgrade --force-reinstall pip  \
-  && python3 -m pip install --upgrade virtualenv \
-;fi
-
-###########################################################################
-# POWERLINE:
-###########################################################################
-
-USER root
-ARG INSTALL_POWERLINE=false
-
-RUN if [ ${INSTALL_POWERLINE} = true ]; then \
-    if [ ${INSTALL_PYTHON} = true ]; then \
-    python -m pip install --upgrade powerline-status && \
-    echo "" >> /etc/bash.bashrc && \
-    echo ". /usr/local/lib/python2.7/dist-packages/powerline/bindings/bash/powerline.sh" >> /etc/bash.bashrc \
-  ;fi \
-;fi
-
-###########################################################################
-# SUPERVISOR:
-###########################################################################
-ARG INSTALL_SUPERVISOR=false
-
-RUN if [ ${INSTALL_SUPERVISOR} = true ]; then \
-    if [ ${INSTALL_PYTHON} = true ]; then \
-    python -m pip install --upgrade supervisor && \
-    echo_supervisord_conf > /etc/supervisord.conf && \
-    sed -i 's/\;\[include\]/\[include\]/g' /etc/supervisord.conf && \
-    sed -i 's/\;files\s.*/files = supervisord.d\/*.conf/g' /etc/supervisord.conf \
-  ;fi \
-;fi
-
-USER cantor
-
-###########################################################################
 # ImageMagick:
 ###########################################################################
 
@@ -843,33 +758,6 @@ RUN if [ ${INSTALL_DUSK_DEPS} = true ]; then \
   && unzip chromedriver_linux64.zip \
   && mv chromedriver /usr/local/bin/ \
   && rm chromedriver_linux64.zip \
-;fi
-
-###########################################################################
-# Phalcon:
-###########################################################################
-
-ARG INSTALL_PHALCON=false
-ARG CANTOR_PHALCON_VERSION
-ENV CANTOR_PHALCON_VERSION ${CANTOR_PHALCON_VERSION}
-
-RUN if [ $INSTALL_PHALCON = true ]; then \
-    apt-get update && apt-get install -y unzip libpcre3-dev gcc make re2c git automake autoconf\
-    && git clone https://github.com/jbboehr/php-psr.git \
-    && cd php-psr \
-    && phpize \
-    && ./configure \
-    && make \
-    && make test \
-    && make install \
-    && curl -L -o /tmp/cphalcon.zip https://github.com/phalcon/cphalcon/archive/v${CANTOR_PHALCON_VERSION}.zip \
-    && unzip -d /tmp/ /tmp/cphalcon.zip \
-    && cd /tmp/cphalcon-${CANTOR_PHALCON_VERSION}/build \
-    && ./install \
-    && echo "extension=psr.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/phalcon.ini \
-    && echo "extension=phalcon.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/phalcon.ini \
-    && ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/phalcon.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/30-phalcon.ini \
-    && rm -rf /tmp/cphalcon* \
 ;fi
 
 ###########################################################################
@@ -995,7 +883,7 @@ RUN if [ ${INSTALL_WKHTMLTOPDF} = true ]; then \
    libx11-dev \
    libjpeg62 \
    libxtst6 \
-   fontconfig \ 
+   fontconfig \
    libjpeg-turbo8-dev \
    xfonts-base \
    xfonts-75dpi \
