@@ -494,9 +494,6 @@ ARG INSTALL_AST=false
 ARG AST_VERSION=1.0.16
 ENV AST_VERSION ${AST_VERSION}
 
-RUN echo "================================================="
-RUN echo "$INSTALL_AST"
-
 RUN if [ ${INSTALL_AST} = true ]; then \
     # Install AST extension
     printf "\n" | pecl -q install ast-${AST_VERSION} && \
