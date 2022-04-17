@@ -33,4 +33,13 @@ RUN if [ ${USE_MIRRORS} = true ]; then \
   yarn config set node_inspector_cdnurl https://npm.taobao.org/mirrors/node-inspector; \
 fi;
 
+RUN npm i npm -g
+RUN npm config set cache /srv/cache/npm-cache --global
+
+RUN npm i yarn -g
+RUN yarn config set cache-folder /srv/cache/yarn-cache
+
+RUN npm i pnpm -g
+RUN pnpm config set store-dir /srv/cache/pnpm-store
+
 WORKDIR /srv/services

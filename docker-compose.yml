@@ -211,14 +211,17 @@ services:
       networks:
         - backend
 
-### NODE Cli ############################################
-    node-cli:
+### NODE ############################################
+    node:
       build:
-        context: ./node-cli
+        context: node
         args:
-          - USE_MIRRORS=${NODE_CLI_USE_MIRRORS}
+          - USE_MIRRORS=${NODE_USE_MIRRORS}
       volumes:
         - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+        - ${CACHE_PATH_HOST}/npm-cache:/srv/cache/npm-cache:delegated
+        - ${CACHE_PATH_HOST}/yarn-cache:/srv/cache/yarn-cache:delegated
+        - ${CACHE_PATH_HOST}/pnpm-store:/srv/cache/pnpm-store:delegated
       extra_hosts:
         - "dockerhost:${DOCKER_HOST_IP}"
       tty: true

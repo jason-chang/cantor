@@ -14,7 +14,10 @@ APP_CODE_PATH_CONTAINER=/srv/services
 APP_CODE_CONTAINER_FLAG=:cached
 
 # Choose storage path on your machine. For all storage systems
-DATA_PATH_HOST=~/srv/data
+DATA_PATH_HOST=/srv/data
+
+# Choose cache path on your machine. For all storage systems
+CACHE_PATH_HOST=/srv/cache
 
 ### Drivers ################################################
 
@@ -226,9 +229,11 @@ PHP_WORKER_INSTALL_XMLRPC=false
 PHP_WORKER_PUID=1000
 PHP_WORKER_PGID=1000
 
-### NODE_CLI ############################################
+### NODE ############################################
 
-NODE_CLI_USE_MIRRORS=false
+NODE_VERSION=16
+NODE_USE_MIRRORS=false
+DATA_PATH_HOST=/srv/data
 
 ### NGINX #################################################
 
