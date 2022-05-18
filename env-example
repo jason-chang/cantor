@@ -259,6 +259,12 @@ MYSQL_ENTRYPOINT_INITDB=./mysql/docker-entrypoint-initdb.d
 
 REDIS_PORT=6379
 
+### MONGODB ###############################################
+
+MONGODB_PORT=27017
+MONGO_USERNAME=root
+MONGO_PASSWORD=example
+
 ### VERDACCIO #################################################
 
 VERDACCIO_PORT=4873
