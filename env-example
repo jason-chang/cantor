@@ -10,8 +10,17 @@ APP_CODE_PATH_HOST=/srv/services
 # Point to where the `APP_CODE_PATH_HOST` should be in the container
 APP_CODE_PATH_CONTAINER=/srv/services
 
+# Point to the path of your applications static file on your host
+APP_STATIC_PATH_HOST=/srv/static
+
+# Point to where the `APP_STATIC_PATH_HOST` should be in the container
+APP_STATIC_PATH_CONTAINER=/srv/static
+
+# Point to where the `APP_CODE_PATH_HOST` should be in the container
+APP_CODE_PATH_CONTAINER=/srv/services
+
 # You may add flags to the path `:cached`, `:delegated`. When using Docker Sync add `:nocopy`
-APP_CODE_CONTAINER_FLAG=:cached
+APP_CONTAINER_FLAG=:cached
 
 # Choose storage path on your machine. For all storage systems
 DATA_PATH_HOST=/srv/data

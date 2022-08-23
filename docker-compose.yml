@@ -92,7 +92,8 @@ services:
           - https_proxy
           - no_proxy
       volumes:
-        - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+        - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CONTAINER_FLAG}
+        - ${APP_STATIC_PATH_HOST}:${APP_STATIC_PATH_CONTAINER}${APP_CONTAINER_FLAG}
         - ./php-worker/supervisord.d:/etc/supervisord.d
         - ./workspace/crontab/cantor:/etc/cron.d/cantor
       extra_hosts:
@@ -169,7 +170,8 @@ services:
           - no_proxy
       volumes:
         - ./php-fpm/conf/php${PHP_VERSION}.ini:/usr/local/etc/php/php.ini
-        - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+        - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CONTAINER_FLAG}
+        - ${APP_STATIC_PATH_HOST}:${APP_STATIC_PATH_CONTAINER}${APP_CONTAINER_FLAG}
       expose:
         - "9000"
       extra_hosts:
@@ -206,7 +208,8 @@ services:
           - PUID=${PHP_WORKER_PUID}
           - PGID=${PHP_WORKER_PGID}
       volumes:
-        - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+        - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CONTAINER_FLAG}
+        - ${APP_STATIC_PATH_HOST}:${APP_STATIC_PATH_CONTAINER}${APP_CONTAINER_FLAG}
         - ./php-worker/supervisord.d:/etc/supervisord.d
       extra_hosts:
         - "dockerhost:${DOCKER_HOST_IP}"
@@ -220,7 +223,8 @@ services:
         args:
           - USE_MIRRORS=${NODE_USE_MIRRORS}
       volumes:
-        - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+        - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CONTAINER_FLAG}
+        - ${APP_STATIC_PATH_HOST}:${APP_STATIC_PATH_CONTAINER}${APP_CONTAINER_FLAG}
         - ${CACHE_PATH_HOST}/npm-cache:/srv/cache/npm-cache:delegated
         - ${CACHE_PATH_HOST}/yarn-cache:/srv/cache/yarn-cache:delegated
         - ${CACHE_PATH_HOST}/pnpm-store:/srv/cache/pnpm-store:delegated
@@ -242,7 +246,8 @@ services:
           - https_proxy
           - no_proxy
       volumes:
-        - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+        - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CONTAINER_FLAG}
+        - ${APP_STATIC_PATH_HOST}:${APP_STATIC_PATH_CONTAINER}${APP_CONTAINER_FLAG}
         - ${NGINX_HOST_LOG_PATH}:/var/log/nginx
         - ${NGINX_SITES_PATH}:/etc/nginx/sites-available
         - ${NGINX_SSL_PATH}:/etc/nginx/ssl
