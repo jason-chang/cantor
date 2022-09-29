@@ -1,3 +1,3 @@
-FROM verdaccio/verdaccio
+FROM verdaccio/verdaccio:latest
 
 VOLUME /verdaccio
