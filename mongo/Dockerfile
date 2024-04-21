@@ -1,6 +1,6 @@
 FROM mongo:latest
 
-LABEL maintainer="JasonChang <chaoyue.chang@gmail.com>"
+LABEL maintainer="Jason Chang <chaoyue.chang@gmail.com>"
 
 #COPY mongo.conf /usr/local/etc/mongo/mongo.conf
 
