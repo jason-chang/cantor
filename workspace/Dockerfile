@@ -425,8 +425,8 @@ RUN if [ ${INSTALL_MONGO} = true ]; then \
     apt-get install -yqq pkg-config && \
     if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
       pecl install mongo; \
-      echo "extension=mongo.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongo.ini; \
-      ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongo.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-mongo.ini; \
+      echo "extension=mongo.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/mongo.ini; \
+      ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/mongo.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/30-mongo.ini; \
       php -m | grep -oiE '^mongo$'; \
     else \
       if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") != "4" ]; then \
@@ -438,8 +438,8 @@ RUN if [ ${INSTALL_MONGO} = true ]; then \
       else \
         pecl install mongodb; \
       fi; \
-      echo "extension=mongodb.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongodb.ini; \
-      ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongodb.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-mongodb.ini; \
+      echo "extension=mongodb.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/mongodb.ini; \
+      ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/mongodb.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/30-mongodb.ini; \
       php -m | grep -oiE '^mongodb$'; \
     fi; \
 fi
