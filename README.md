@@ -34,4 +34,4 @@ COMPOSE_PROJECT_NAME=some_project_cantor
 
 ## License
 
-[MIT](https://github.com/cantor/cantor/blob/master/LICENSE) © Jason Chang
+[MIT](https://github.com/jason-chang/cantor/blob/master/LICENSE) © Jason Chang
