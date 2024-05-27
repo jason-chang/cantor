@@ -9,13 +9,9 @@ ARG CANTOR_PHP_VERSION
 ENV DEBIAN_FRONTEND noninteractive
 
 # If you're in China, or you need to change sources, will be set USE_MIRRORS to true in .env.
-
 ARG USE_MIRRORS=false
 RUN if [ ${USE_MIRRORS} = true ]; then \
-    # Change application source from deb.debian.org to aliyun source
-    sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list && \
-    sed -i 's/security.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list && \
-    sed -i 's/security-cdn.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list \
+    sed -i 's#deb.debian.org/debian$#mirrors.tuna.tsinghua.edu.cn/debian#' /etc/apt/sources.list.d/debian.sources \
 ;fi
 
 # always run apt update when start and after add new source list, then clean up at end.

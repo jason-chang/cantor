@@ -6,11 +6,12 @@ USER root
 
 RUN corepack enable
 
-COPY ./mirror.sh /root/mirror.sh
+ADD ./mirror.sh /root/mirror.sh
 
 ARG USE_MIRRORS=false
 RUN if [ ${USE_MIRRORS} = true ]; then \
-  sh ~/.mirror.sh; \
+  chmod +x /root/mirror.sh; \
+  sh /root/mirror.sh; \
 fi;
 
 RUN pnpm config set store-dir /srv/cache/pnpm-store
