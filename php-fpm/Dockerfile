@@ -1,32 +1,17 @@
-#
-#--------------------------------------------------------------------------
-# Image Setup
-#--------------------------------------------------------------------------
-#
-# To edit the 'php-fpm' base Image, visit its repository on Github
-#    https://github.com/Laradock/php-fpm
-#
-# To change its version, see the available Tags on the Docker Hub:
-#    https://hub.docker.com/r/laradock/php-fpm/tags/
-#
-# Note: Base Image name format {image-tag}-{php-version}
-#
 
 ARG CANTOR_PHP_VERSION
 ARG BASE_IMAGE_TAG_PREFIX=latest
 FROM laradock/php-fpm:${BASE_IMAGE_TAG_PREFIX}-${CANTOR_PHP_VERSION}
-
-LABEL maintainer="Mahmoud Zalt <mahmoud@zalt.me>"
 
 ARG CANTOR_PHP_VERSION
 
 # Set Environment Variables
 ENV DEBIAN_FRONTEND noninteractive
 
-# If you're in China, or you need to change sources, will be set CHANGE_SOURCE to true in .env.
+# If you're in China, or you need to change sources, will be set USE_MIRRORS to true in .env.
 
-ARG CHANGE_SOURCE=false
-RUN if [ ${CHANGE_SOURCE} = true ]; then \
+ARG USE_MIRRORS=false
+RUN if [ ${USE_MIRRORS} = true ]; then \
     # Change application source from deb.debian.org to aliyun source
     sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list && \
     sed -i 's/security.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list && \
@@ -41,17 +26,6 @@ RUN set -xe; \
       apt-utils \
       gnupg2 \
       git \
-      #
-      #--------------------------------------------------------------------------
-      # Mandatory Software's Installation
-      #--------------------------------------------------------------------------
-      #
-      # Mandatory Software's such as ("mcrypt", "pdo_mysql", "libssl-dev", ....)
-      # are installed on the base image 'laradock/php-fpm' image. If you want
-      # to add more Software's or remove existing one, you need to edit the
-      # base image (https://github.com/Laradock/php-fpm).
-      #
-      # next lines are here becase there is no auto build on dockerhub see https://github.com/laradock/laradock/pull/1903#issuecomment-463142846
       libzip-dev zip unzip && \
       if [ ${CANTOR_PHP_VERSION} = "7.3" ] || [ ${CANTOR_PHP_VERSION} = "7.4" ] || [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
         docker-php-ext-configure zip; \
@@ -884,22 +858,6 @@ RUN if [ ${INSTALL_CALENDAR} = true ]; then \
 ;fi
 
 ###########################################################################
-# Phalcon:
-###########################################################################
-
-ARG INSTALL_PHALCON=false
-ARG CANTOR_PHALCON_VERSION
-ENV CANTOR_PHALCON_VERSION ${CANTOR_PHALCON_VERSION}
-
-RUN if [ $INSTALL_PHALCON = true ]; then \
-      apt-get update -yqq \
-      && pecl channel-update pecl.php.net \
-      && apt-get install -yqq libpcre3-dev; \
-      pecl install phalcon-${CANTOR_PHALCON_VERSION}; \
-      docker-php-ext-enable phalcon \
-  ;fi
-
-###########################################################################
 # APCU:
 ###########################################################################
 
@@ -1402,7 +1360,7 @@ RUN if [ ${INSTALL_FAKETIME} = true ]; then \
 ARG LOCALE=POSIX
 ENV LC_ALL ${LOCALE}
 
-WORKDIR /var/www
+WORKDIR /srv/services
 
 CMD ["php-fpm"]
 
