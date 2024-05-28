@@ -1,8 +1,8 @@
 [program:webman]
 command=php /srv/services/www/start.php start
-stdout_logfile=/srv/services/www/logs/out.log
+stdout_logfile=/dev/stdout
 stdout_logfile_maxbytes=0
-stderr_logfile=/srv/services/www/logs/error.log
+stderr_logfile=/dev/stderr
 stderr_logfile_maxbytes=0
 autorestart=true
 startretries=10

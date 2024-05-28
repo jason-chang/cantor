@@ -622,6 +622,8 @@ RUN set -eux; \
 
 COPY supervisord.conf /etc/supervisord.conf
 
+RUN mkdir -p /srv/logs/supervisord
+
 ENTRYPOINT ["/usr/bin/supervisord", "-n", "-c",  "/etc/supervisord.conf"]
 
 #
