@@ -8,8 +8,6 @@ ARG CANTOR_PHP_VERSION
 ARG BASE_IMAGE_TAG_PREFIX=latest
 FROM laradock/workspace:${BASE_IMAGE_TAG_PREFIX}-${CANTOR_PHP_VERSION}
 
-LABEL maintainer="Mahmoud Zalt <mahmoud@zalt.me>"
-
 ARG CANTOR_PHP_VERSION
 
 # Set Environment Variables
@@ -19,15 +17,17 @@ ENV DEBIAN_FRONTEND noninteractive
 USER root
 
 ###########################################################################
-# If you're in China, or you need to change sources, will be set CHANGE_SOURCE to true in .env.
+# If you're in China, or you need to change sources, will be set USE_MIRRORS to true in .env.
 ###########################################################################
 
-ARG CHANGE_SOURCE=false
-RUN if [ ${CHANGE_SOURCE} = true ]; then \
+ARG USE_MIRRORS=false
+RUN if [ ${USE_MIRRORS} = true ]; then \
     # Change application source from ubuntu.com to tuna.tsinghua.edu.cn source
     sed -i "s@http://.*archive.ubuntu.com@https://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list; \
     sed -i "s@http://.*security.ubuntu.com@https://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list; \
   fi;
+
+RUN echo $(cat /etc/apt/sources.list)
 
 ###########################################################################
 # Cantor non-root user:
@@ -233,7 +233,6 @@ ARG INSTALL_BZ2=false
 ARG INSTALL_GMP=false
 ARG INSTALL_GNUPG=false
 ARG INSTALL_SSH2=false
-ARG INSTALL_SOAP=false
 ARG INSTALL_XSL=false
 ARG PHP_VERSION=${CANTOR_PHP_VERSION}
 
@@ -269,13 +268,6 @@ RUN set -eux; \
     if [ ${INSTALL_SSH2} = true ]; then \
       # Install the PHP SSH2 extension
       apt-get -yqq install libssh2-1-dev php${CANTOR_PHP_VERSION}-ssh2; \
-    fi; \
-    ###########################################################################
-    # SOAP:
-    ###########################################################################
-    if [ ${INSTALL_SOAP} = true ]; then \
-      # Install the PHP SOAP extension
-      apt-get -yqq install libxml2-dev php${CANTOR_PHP_VERSION}-soap; \
     fi; \
     ###########################################################################
     # XSL:
@@ -331,42 +323,26 @@ RUN if [ ${INSTALL_XDEBUG} = true ]; then \
   # Install the xdebug extension
   # https://xdebug.org/docs/compat
   apt-get install -yqq pkg-config php-xml php${CANTOR_PHP_VERSION}-xml && \
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] || { [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && { [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "3" ] ;} ;}; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-      pecl install xdebug-3.3.0; \
-    else \
-      pecl install xdebug-3.1.6; \
-    fi; \
+  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
+    pecl install xdebug-3.3.0; \
   else \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl install xdebug-2.5.5; \
-    else \
-      if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
-        pecl install xdebug-2.9.0; \
-      else \
-        pecl install xdebug-2.9.8; \
-      fi \
-    fi \
-  fi && \
+    pecl install xdebug-3.1.6; \
+  fi; \
   echo "zend_extension=xdebug.so" >> /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/20-xdebug.ini \
 ;fi
 
 # ADD for REMOTE debugging
 COPY ./xdebug.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/xdebug.ini
 
-RUN if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] || { [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && { [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "3" ] ;} ;}; then \
-  sed -i "s/xdebug.remote_host=/xdebug.client_host=/" /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/xdebug.ini && \
+RUN sed -i "s/xdebug.remote_host=/xdebug.client_host=/" /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/xdebug.ini && \
   sed -i "s/xdebug.remote_connect_back=0/xdebug.discover_client_host=false/" /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/xdebug.ini && \
   sed -i "s/xdebug.remote_port=9000/xdebug.client_port=${XDEBUG_PORT}/" /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/xdebug.ini && \
   sed -i "s/xdebug.profiler_enable=0/; xdebug.profiler_enable=0/" /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/xdebug.ini && \
   sed -i "s/xdebug.profiler_output_dir=/xdebug.output_dir=/" /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/xdebug.ini && \
   sed -i "s/xdebug.remote_mode=req/; xdebug.remote_mode=req/" /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/xdebug.ini && \
   sed -i "s/xdebug.remote_autostart=0/xdebug.start_with_request=yes/" /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.remote_enable=0/xdebug.mode=debug/" /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/xdebug.ini \
-;else \
-  sed -i "s/xdebug.remote_autostart=0/xdebug.remote_autostart=1/" /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.remote_enable=0/xdebug.remote_enable=1/" /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/xdebug.ini \
-;fi
+  sed -i "s/xdebug.remote_enable=0/xdebug.mode=debug/" /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/xdebug.ini 
+
 RUN sed -i "s/xdebug.cli_color=0/xdebug.cli_color=1/" /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/xdebug.ini
 
 ###########################################################################
@@ -378,11 +354,9 @@ USER root
 ARG INSTALL_PCOV=false
 
 RUN if [ ${INSTALL_PCOV} = true ]; then \
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]  || { [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") != "0" ]; }; then \
-    pecl install pcov && \
-    echo "extension=pcov.so" >> /etc/php/${CANTOR_PHP_VERSION}/cli/php.ini && \
-    echo "pcov.enabled" >> /etc/php/${CANTOR_PHP_VERSION}/cli/php.ini \
-  ;fi \
+  pecl install pcov && \
+  echo "extension=pcov.so" >> /etc/php/${CANTOR_PHP_VERSION}/cli/php.ini && \
+  echo "pcov.enabled" >> /etc/php/${CANTOR_PHP_VERSION}/cli/php.ini \
 ;fi
 
 
@@ -445,26 +419,11 @@ ARG INSTALL_MONGO=false
 
 RUN if [ ${INSTALL_MONGO} = true ]; then \
     # Install the mongodb extension
-    apt-get install -yqq pkg-config && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl install mongo; \
-      echo "extension=mongo.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/mongo.ini; \
-      ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/mongo.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/30-mongo.ini; \
-      php -m | grep -oiE '^mongo$'; \
-    else \
-      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") != "4" ]; then \
-        if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "1" ]; then \
-          pecl install mongodb-1.9.2; \
-        else \
-          pecl install mongodb-1.16.2; \
-        fi; \
-      else \
-        pecl install mongodb; \
-      fi; \
-      echo "extension=mongodb.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/mongodb.ini; \
-      ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/mongodb.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/30-mongodb.ini; \
-      php -m | grep -oiE '^mongodb$'; \
-    fi; \
+    apt-get install -yqq pkg-config; \
+    pecl install mongodb; \
+    echo "extension=mongodb.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/mongodb.ini; \
+    ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/mongodb.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/30-mongodb.ini; \
+    php -m | grep -oiE '^mongodb$'; \
 fi
 
 ###########################################################################
@@ -475,14 +434,7 @@ ARG INSTALL_AMQP=false
 
 RUN if [ ${INSTALL_AMQP} = true ]; then \
     apt-get install -yqq librabbitmq-dev && \
-    if [ ${CANTOR_PHP_VERSION} = "7.3" ] \
-      || [ ${CANTOR_PHP_VERSION} = "7.2" ] \
-      || [ ${CANTOR_PHP_VERSION} = "7.1" ] \
-      || [ ${CANTOR_PHP_VERSION} = "7.0" ]; then \
-      printf "\n" | pecl install amqp-1.11.0; \
-    else \
-      printf "\n" | pecl install amqp; \
-    fi && \
+    printf "\n" | pecl install amqp; \
     echo "extension=amqp.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/amqp.ini && \
     ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/amqp.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/30-amqp.ini && \
     php -m | grep -oiE '^amqp$' \
@@ -532,11 +484,7 @@ ARG INSTALL_GEARMAN=false
 RUN if [ ${INSTALL_GEARMAN} = true ]; then \
     add-apt-repository -y ppa:ondrej/pkg-gearman && \
     apt-get update && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-      apt-get install php${CANTOR_PHP_VERSION}-gearman -y  \
-    ; else \
-      apt-get install php-gearman -y  \
-    ;fi \
+    apt-get install php-gearman -y  \
 ;fi
 
 ###########################################################################
@@ -559,17 +507,7 @@ ARG INSTALL_SWOOLE=false
 RUN set -eux; \
     if [ ${INSTALL_SWOOLE} = true ]; then \
       # Install Php Swoole Extension
-      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        echo '' | pecl -q install swoole-2.0.10; \
-      elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
-        echo '' | pecl -q install swoole-4.3.5; \
-      elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "1" ]; then \
-        echo '' | pecl -q install swoole-4.5.11; \
-      elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-        echo '' | pecl -q install swoole-4.8.12; \
-      else \
-        echo '' | pecl -q install swoole; \
-      fi; \
+      echo '' | pecl -q install swoole; \
       echo "extension=swoole.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/swoole.ini; \
       ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/swoole.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/20-swoole.ini; \
       php -m | grep -q 'swoole'; \
@@ -585,14 +523,10 @@ ARG INSTALL_XLSWRITER=false
 RUN set -eux; \
     if [ ${INSTALL_XLSWRITER} = true ]; then \
       # Install Php xlswriter Extension
-      if [ $(php -r "echo PHP_MAJOR_VERSION;") != "5" ]; then \
-        echo '' | pecl -q install xlswriter && \
-        echo "extension=xlswriter.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/xlswriter.ini && \
-        ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/xlswriter.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/20-xlswriter.ini && \
-        php -m | grep -q 'xlswriter'; \
-      else \
-        echo "PHP Extension for xlswriter is not supported for PHP 5.0"; \
-      fi \
+      echo '' | pecl -q install xlswriter && \
+      echo "extension=xlswriter.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/xlswriter.ini && \
+      ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/xlswriter.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/20-xlswriter.ini && \
+      php -m | grep -q 'xlswriter' \
     ;fi
 
 
@@ -604,12 +538,10 @@ ARG INSTALL_TAINT=false
 
 RUN if [ "${INSTALL_TAINT}" = true ]; then \
     # Install Php TAINT Extension
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-      pecl install taint && \
-      echo "extension=taint.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/taint.ini && \
-      ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/taint.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/20-taint.ini && \
-      php -m | grep -q 'taint'; \
-    fi \
+    pecl install taint && \
+    echo "extension=taint.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/taint.ini && \
+    ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/taint.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/20-taint.ini && \
+    php -m | grep -q 'taint' \
 ;fi
 
 ###########################################################################
@@ -629,15 +561,9 @@ RUN if [ ${INSTALL_LIBPNG} = true ]; then \
 ARG INSTALL_INOTIFY=false
 
 RUN if [ ${INSTALL_INOTIFY} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl -q install inotify-0.1.6 && \
-      echo "extension=inotify.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/inotify.ini && \
-      ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/inotify.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/20-inotify.ini; \
-    else \
-      pecl -q install inotify && \
-      echo "extension=inotify.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/inotify.ini && \
-      ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/inotify.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/20-inotify.ini \
-    ;fi \
+    pecl -q install inotify && \
+    echo "extension=inotify.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/inotify.ini && \
+    ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/inotify.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/20-inotify.ini \
 ;fi
 
 ###########################################################################
@@ -649,13 +575,10 @@ ARG AST_VERSION=1.0.10
 ENV AST_VERSION ${AST_VERSION}
 
 RUN if [ ${INSTALL_AST} = true ]; then \
-    # AST extension requires PHP 7.0.0 or newer
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") != "5" ]; then \
-        # Install AST extension
-        printf "\n" | pecl -q install ast-${AST_VERSION} && \
-        echo "extension=ast.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/ast.ini && \
-        phpenmod -v ${CANTOR_PHP_VERSION} -s cli ast \
-    ;fi \
+    # Install AST extension
+    printf "\n" | pecl -q install ast-${AST_VERSION} && \
+    echo "extension=ast.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/ast.ini && \
+    phpenmod -v ${CANTOR_PHP_VERSION} -s cli ast \
 ;fi
 
 ###########################################################################
@@ -680,25 +603,6 @@ ARG INSTALL_GRAPHVIZ=false
 
 RUN if [ ${INSTALL_GRAPHVIZ} = true ]; then \
     apt-get install -yqq graphviz \
-;fi
-
-# IonCube Loader
-###########################################################################
-
-ARG INSTALL_IONCUBE=false
-
-RUN if [ ${INSTALL_IONCUBE} = true ]; then \
-    if [ ${CANTOR_PHP_VERSION} != "8.3" ] \
-      && [ ${CANTOR_PHP_VERSION} != "8.0" ]; then \
-      # Install the php ioncube loader
-      curl -L -o /tmp/ioncube_loaders_lin_x86-64.tar.gz https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz \
-      && tar zxpf /tmp/ioncube_loaders_lin_x86-64.tar.gz -C /tmp \
-      && mv /tmp/ioncube/ioncube_loader_lin_${CANTOR_PHP_VERSION}.so $(php -r "echo ini_get('extension_dir');")/ioncube_loader.so \
-      && echo "zend_extension=ioncube_loader.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/ioncube.ini \
-      && ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/ioncube.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/0ioncube.ini \
-      && rm -rf /tmp/ioncube* \
-      && php -m | grep -oiE '^ionCube Loader$' \
-    ;fi \
 ;fi
 
 ###########################################################################
@@ -870,104 +774,6 @@ RUN if [ ${INSTALL_YARN} = true ]; then \
 ENV PATH $PATH:/home/cantor/.yarn/bin
 
 ###########################################################################
-# PHP Aerospike:
-###########################################################################
-
-USER root
-
-ARG INSTALL_AEROSPIKE=false
-
-RUN set -xe; \
-  if [ ${INSTALL_AEROSPIKE} = true ]; then \
-    # Fix dependencies for PHPUnit within aerospike extension
-    apt-get -y install sudo wget && \
-    # Install the php aerospike extension
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      curl -L -o /tmp/aerospike-client-php.tar.gz https://github.com/aerospike/aerospike-client-php5/archive/master.tar.gz; \
-    else \
-      curl -L -o /tmp/aerospike-client-php.tar.gz https://github.com/aerospike/aerospike-client-php/archive/master.tar.gz; \
-    fi \
-    && mkdir -p /tmp/aerospike-client-php \
-    && tar -C /tmp/aerospike-client-php -zxvf /tmp/aerospike-client-php.tar.gz --strip 1 \
-    && \
-      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        ( \
-          cd /tmp/aerospike-client-php/src/aerospike \
-          && phpize \
-          && ./build.sh \
-          && make install \
-        ) \
-      else \
-        if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-          ( \
-              cd /tmp/aerospike-client-php/src \
-              && phpize \
-              && ./build.sh \
-              && make install \
-          ) \
-        else \
-          echo "AEROSPIKE does not support PHP 8.0" \
-        ;fi \
-      ;fi \
-    && rm /tmp/aerospike-client-php.tar.gz \
-    && echo 'extension=aerospike.so' >> /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/aerospike.ini \
-    && echo 'aerospike.udf.lua_system_path=/usr/local/aerospike/lua' >> /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/aerospike.ini \
-    && echo 'aerospike.udf.lua_user_path=/usr/local/aerospike/usr-lua' >> /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/aerospike.ini \
-  ;fi
-
-###########################################################################
-# PHP OCI8:
-###########################################################################
-
-USER root
-ARG INSTALL_OCI8=false
-ARG ORACLE_INSTANT_CLIENT_MIRROR=https://github.com/the-paulus/oracle-instantclient/raw/master/
-ARG ORACLE_INSTANT_CLIENT_ARCH=x86_64
-ARG ORACLE_INSTANT_CLIENT_MAJOR=18
-ARG ORACLE_INSTANT_CLIENT_MINOR=3
-
-ENV ORACLE_INSTANT_CLIENT_VERSION=${ORACLE_INSTANT_CLIENT_MAJOR}_${ORACLE_INSTANT_CLIENT_MINOR}
-ENV LD_LIBRARY_PATH="/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}"
-ENV OCI_HOME="/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}"
-ENV OCI_LIB_DIR="/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}"
-ENV OCI_INCLUDE_DIR="/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/sdk/include"
-ENV OCI_VERSION=${ORACLE_INSTANT_CLIENT_MAJOR}
-
-RUN if [ ${INSTALL_OCI8} = true ]; then \
-  # Install wget
-  apt-get update && apt-get install --no-install-recommends -y wget \
-  # Install Oracle Instantclient
-  && mkdir /opt/oracle \
-      && cd /opt/oracle \
-      && wget ${ORACLE_INSTANT_CLIENT_MIRROR}instantclient-basic-linux.${ORACLE_INSTANT_CLIENT_ARCH}-${ORACLE_INSTANT_CLIENT_VERSION}.zip \
-      && wget ${ORACLE_INSTANT_CLIENT_MIRROR}instantclient-sdk-linux.${ORACLE_INSTANT_CLIENT_ARCH}-${ORACLE_INSTANT_CLIENT_VERSION}.zip \
-      && unzip /opt/oracle/instantclient-basic-linux.${ORACLE_INSTANT_CLIENT_ARCH}-${ORACLE_INSTANT_CLIENT_VERSION}.zip -d /opt/oracle \
-      && unzip /opt/oracle/instantclient-sdk-linux.${ORACLE_INSTANT_CLIENT_ARCH}-${ORACLE_INSTANT_CLIENT_VERSION}.zip -d /opt/oracle \
-      && if [ ${OCI_VERSION} -lt 18 ] ; then ln -s /opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/libclntsh.so.${ORACLE_INSTANT_CLIENT_MAJOR}.${ORACLE_INSTANT_CLIENT_MINOR} /opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/libclntsh.so ; fi\
-      && if [ ${OCI_VERSION} -lt 18 ] ; then ln -s /opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/libclntshcore.so.${ORACLE_INSTANT_CLIENT_MAJOR}.${ORACLE_INSTANT_CLIENT_MINOR} /opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/libclntshcore.so ; fi \
-      && if [ ${OCI_VERSION} -lt 18 ] ; then ln -s /opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/libocci.so.${ORACLE_INSTANT_CLIENT_MAJOR}.${ORACLE_INSTANT_CLIENT_MINOR} /opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/libocci.so ; fi \
-      && rm -rf /opt/oracle/*.zip \
-  # Install PHP extensions deps
-  && apt-get update \
-      && apt-get install --no-install-recommends -y \
-          libaio-dev && \
-  # Install PHP extensions
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-  echo 'instantclient,/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/' | pecl install oci8-2.0.12; \
-  elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-  echo 'instantclient,/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/' | pecl install oci8-2.2.0; \
-  elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "80000" ]; then \
-    echo "instantclient,/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/" | pecl install oci8-3.0.1; \
-  elif [ $(php -r "echo PHP_MAJOR_VERSION . PHP_MINOR_VERSION;") = "81" ]; then \
-    echo "instantclient,/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/" | pecl install oci8-3.2.1; \
-  else \
-    echo "instantclient,/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/" | pecl install oci8; \
-  fi \
-  && echo "extension=oci8.so" >> /etc/php/${CANTOR_PHP_VERSION}/cli/php.ini \
-  && php -m | grep -q 'oci8' \
-;fi
-
-###########################################################################
 # PHP V8JS:
 ###########################################################################
 
@@ -979,12 +785,8 @@ RUN set -xe; \
   if [ ${INSTALL_V8JS} = true ]; then \
     add-apt-repository -y ppa:pinepain/libv8-archived \
     && apt-get update -yqq \
-    && apt-get install -y libv8-5.4 && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl install v8js-0.6.4; \
-    else \
-      pecl install v8js; \
-    fi \
+    && apt-get install -y libv8-5.4 \
+    && pecl install v8js  \
     && echo "extension=v8js.so" >> /etc/php/${CANTOR_PHP_VERSION}/cli/php.ini \
     && php -m | grep -q 'v8js' \
   ;fi
@@ -1102,17 +904,7 @@ RUN set -eux; \
     ln -sfn /opt/mssql-tools/bin/bcp /usr/bin/bcp && \
     echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
     locale-gen \
-    && if [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70000" ]; then \
-      pecl install pdo_sqlsrv-5.3.0 sqlsrv-5.3.0 \
-    ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70100" ]; then \
-      pecl install pdo_sqlsrv-5.6.1 sqlsrv-5.6.1 \
-    ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70200" ]; then \
-      pecl install pdo_sqlsrv-5.8.1 sqlsrv-5.8.1 \
-    ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70300" ]; then \
-      pecl install pdo_sqlsrv-5.9.0 sqlsrv-5.9.0 \
-    ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70400" ]; then \
-      pecl install pdo_sqlsrv-5.10.1 sqlsrv-5.10.1 \
-    ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "80000" ]; then \
+    && if [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "80000" ]; then \
       pecl install pdo_sqlsrv-5.11.1 sqlsrv-5.11.1 \
     ;else \
       pecl install pdo_sqlsrv sqlsrv \
@@ -1345,11 +1137,7 @@ RUN if [ ${INSTALL_DUSK_DEPS} = true ]; then \
 ARG INSTALL_APCU=false
 
 RUN if [ ${INSTALL_APCU} = true ]; then \
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-    pecl install apcu-4.0.11; \
-  else \
-    pecl install apcu; \
-  fi && \
+  pecl install apcu; \
   echo "extension=apcu.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/apcu.ini; \
   ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/apcu.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/50-apcu.ini; \
   php -m | grep -q 'apcu' \
@@ -1405,13 +1193,7 @@ RUN set -eux; \
   ###########################################################################
   if [ ${INSTALL_YAML} = true ]; then \
     apt-get install -yqq libyaml-dev; \
-    if   [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        echo '' | pecl install -a yaml-1.3.2; \
-    elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
-        echo '' | pecl install yaml-2.0.4; \
-    else \
-        echo '' | pecl install yaml; \
-    fi; \
+    echo '' | pecl install yaml; \
     echo "extension=yaml.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/yaml.ini; \
     ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/yaml.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/35-yaml.ini; \
   fi; \
@@ -1687,11 +1469,7 @@ RUN set -eux; \
       cd /tmp/php-zookeeper; \
       phpize && ./configure && make && make install;\
     else \
-      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        pecl install zookeeper-0.5.0; \
-      else \
-        pecl install zookeeper-0.7.2; \
-      fi; \
+      pecl install zookeeper-0.7.2; \
     fi; \
     echo "extension=zookeeper.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/zookeeper.ini; \
     ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/zookeeper.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/30-zookeeper.ini; \
@@ -1708,12 +1486,8 @@ ARG INSTALL_SSDB=false
 
 RUN set -xe; \
     if [ ${INSTALL_SSDB} = true ] && [ $(php -r "echo PHP_MAJOR_VERSION;") != "8" ]; then \
-    apt-get -y install sudo wget && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-      curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/php7.tar.gz; \
-    else \
-      curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/master.tar.gz; \
-    fi \
+    apt-get -y install sudo wget \
+    && curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/master.tar.gz \
     && mkdir -p /tmp/ssdb-client-php \
     && tar -C /tmp/ssdb-client-php -zxvf /tmp/ssdb-client-php.tar.gz --strip 1 \
     && cd /tmp/ssdb-client-php \

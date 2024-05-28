@@ -23,11 +23,7 @@ RUN set -xe; \
       gnupg2 \
       git \
       libzip-dev zip unzip && \
-      if [ ${CANTOR_PHP_VERSION} = "7.3" ] || [ ${CANTOR_PHP_VERSION} = "7.4" ] || [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-        docker-php-ext-configure zip; \
-      else \
-        docker-php-ext-configure zip --with-libzip; \
-      fi && \
+      docker-php-ext-configure zip; \
       # Install the zip extension
       docker-php-ext-install zip && \
       php -m | grep -q 'zip'
@@ -40,7 +36,7 @@ RUN set -xe; \
 # Optional Software's will only be installed if you set them to `true`
 # in the `docker-compose.yml` before the build.
 # Example:
-#   - INSTALL_SOAP=true
+#   - INSTALL_DS=true
 #
 
 
@@ -84,9 +80,6 @@ ARG INSTALL_GMP=false
 RUN if [ ${INSTALL_GMP} = true ]; then \
     # Install the GMP extension
 	  apt-get install -yqq libgmp-dev && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h \
-    ;fi && \
     docker-php-ext-install gmp \
 ;fi
 
@@ -112,11 +105,7 @@ ARG INSTALL_SSH2=false
 RUN if [ ${INSTALL_SSH2} = true ]; then \
     # Install the ssh2 extension
     apt-get -y install libssh2-1-dev && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        pecl install -a ssh2-0.13; \
-    else \
-        pecl install -a ssh2-1.3.1; \
-    fi && \
+    pecl install -a ssh2-1.3.1 && \
     docker-php-ext-enable ssh2 \
 ;fi
 
@@ -130,19 +119,6 @@ ARG INSTALL_FAKETIME=false
 
 RUN if [ ${INSTALL_FAKETIME} = true ]; then \
     apt-get install -yqq libfaketime \
-;fi
-
-###########################################################################
-# SOAP:
-###########################################################################
-
-ARG INSTALL_SOAP=false
-
-RUN if [ ${INSTALL_SOAP} = true ]; then \
-    # Install the soap extension
-    rm /etc/apt/preferences.d/no-debian-php && \
-    apt-get -y install libxml2-dev php-soap && \
-    docker-php-ext-install soap \
 ;fi
 
 ###########################################################################
@@ -199,42 +175,26 @@ ARG XDEBUG_PORT=9003
 RUN if [ ${INSTALL_XDEBUG} = true ]; then \
   # Install the xdebug extension
   # https://xdebug.org/docs/compat
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] || { [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && { [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "3" ] ;} ;}; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-      pecl install xdebug-3.3.0; \
-    else \
-      pecl install xdebug-3.1.6; \
-    fi; \
+  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
+    pecl install xdebug-3.3.0; \
   else \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl install xdebug-2.5.5; \
-    else \
-      if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
-        pecl install xdebug-2.9.0; \
-      else \
-        pecl install xdebug-2.9.8; \
-      fi \
-    fi \
-  fi && \
+    pecl install xdebug-3.1.6; \
+  fi; \
   docker-php-ext-enable xdebug \
 ;fi
 
 # Copy xdebug configuration for remote debugging
 COPY ./xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
 
-RUN if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] || { [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && { [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "3" ] ;} ;}; then \
-  sed -i "s/xdebug.remote_host=/xdebug.client_host=/" /usr/local/etc/php/conf.d/xdebug.ini && \
+RUN sed -i "s/xdebug.remote_host=/xdebug.client_host=/" /usr/local/etc/php/conf.d/xdebug.ini && \
   sed -i "s/xdebug.remote_connect_back=0/xdebug.discover_client_host=false/" /usr/local/etc/php/conf.d/xdebug.ini && \
   sed -i "s/xdebug.remote_port=9000/xdebug.client_port=${XDEBUG_PORT}/" /usr/local/etc/php/conf.d/xdebug.ini && \
   sed -i "s/xdebug.profiler_enable=0/; xdebug.profiler_enable=0/" /usr/local/etc/php/conf.d/xdebug.ini && \
   sed -i "s/xdebug.profiler_output_dir=/xdebug.output_dir=/" /usr/local/etc/php/conf.d/xdebug.ini && \
   sed -i "s/xdebug.remote_mode=req/; xdebug.remote_mode=req/" /usr/local/etc/php/conf.d/xdebug.ini && \
   sed -i "s/xdebug.remote_autostart=0/xdebug.start_with_request=yes/" /usr/local/etc/php/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.remote_enable=0/xdebug.mode=debug/" /usr/local/etc/php/conf.d/xdebug.ini \
-;else \
-  sed -i "s/xdebug.remote_autostart=0/xdebug.remote_autostart=1/" /usr/local/etc/php/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.remote_enable=0/xdebug.remote_enable=1/" /usr/local/etc/php/conf.d/xdebug.ini \
-;fi
+  sed -i "s/xdebug.remote_enable=0/xdebug.mode=debug/" /usr/local/etc/php/conf.d/xdebug.ini 
+
 RUN sed -i "s/xdebug.cli_color=0/xdebug.cli_color=1/" /usr/local/etc/php/conf.d/xdebug.ini
 
 ###########################################################################
@@ -246,10 +206,8 @@ USER root
 ARG INSTALL_PCOV=false
 
 RUN if [ ${INSTALL_PCOV} = true ]; then \
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]  || { [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") != "0" ]; }; then \
     pecl install pcov && \
     docker-php-ext-enable pcov \
-  ;fi \
 ;fi
 
 ###########################################################################
@@ -285,13 +243,7 @@ ARG INSTALL_PHPREDIS=false
 
 RUN if [ ${INSTALL_PHPREDIS} = true ]; then \
     # Install Php Redis Extension
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl install -o -f redis-4.3.0; \
-    elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && { [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "1" ] ;}; then \
-      pecl install -o -f redis-5.3.7; \
-    else \
-      pecl install -o -f redis; \
-    fi \
+    pecl install -o -f redis \
     && rm -rf /tmp/pear \
     && docker-php-ext-enable redis \
 ;fi
@@ -304,17 +256,7 @@ ARG INSTALL_SWOOLE=false
 RUN set -eux; \
     if [ ${INSTALL_SWOOLE} = true ]; then \
       # Install Php Swoole Extension
-      if   [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "50600" ]; then \
-        pecl install swoole-2.0.10; \
-      elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70000" ]; then \
-        pecl install swoole-4.3.5; \
-      elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70100" ]; then \
-        pecl install swoole-4.5.11; \
-      elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-        pecl install swoole-4.8.12; \
-      else \
-        pecl install swoole; \
-      fi; \
+      pecl install swoole; \
       docker-php-ext-enable swoole; \
       php -m | grep -q 'swoole'; \
     fi
@@ -327,11 +269,9 @@ ARG INSTALL_TAINT=false
 
 RUN if [ ${INSTALL_TAINT} = true ]; then \
     # Install Php TAINT Extension
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-      pecl install taint && \
-      docker-php-ext-enable taint && \
-      php -m | grep -q 'taint'; \
-    fi \
+    pecl install taint && \
+    docker-php-ext-enable taint && \
+    php -m | grep -q 'taint' \
 ;fi
 
 ###########################################################################
@@ -342,23 +282,9 @@ ARG INSTALL_MONGO=false
 
 RUN if [ ${INSTALL_MONGO} = true ]; then \
     # Install the mongodb extension
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl install mongo; \
-      docker-php-ext-enable mongo; \
-      php -m | grep -oiE '^mongo$'; \
-    else \
-      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") != "4" ]; then \
-        if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "1" ]; then \
-          pecl install mongodb-1.9.2; \
-        else \
-          pecl install mongodb-1.16.2; \
-        fi; \
-      else \
-        pecl install mongodb; \
-      fi; \
-      docker-php-ext-enable mongodb; \
-      php -m | grep -oiE '^mongodb$'; \
-    fi; \
+    pecl install mongodb; \
+    docker-php-ext-enable mongodb; \
+    php -m | grep -oiE '^mongodb$'; \
 fi
 
 ###########################################################################
@@ -410,14 +336,7 @@ RUN set -eux; \
     if [ ${INSTALL_AMQP} = true ]; then \
       # # Install the amqp extension
       apt-get -yqq install librabbitmq-dev; \
-      if [ ${CANTOR_PHP_VERSION} = "7.3" ] \
-        || [ ${CANTOR_PHP_VERSION} = "7.2" ] \
-        || [ ${CANTOR_PHP_VERSION} = "7.1" ] \
-        || [ ${CANTOR_PHP_VERSION} = "7.0" ]; then \
-        pecl install amqp-1.11.0; \
-      else \
-        pecl install amqp; \
-      fi; \
+      pecl install amqp; \
       docker-php-ext-enable amqp; \
       php -m | grep -oiE '^amqp$'; \
     fi
@@ -488,13 +407,9 @@ ARG INSTALL_XLSWRITER=false
 RUN set -eux; \
     if [ ${INSTALL_XLSWRITER} = true ]; then \
       # Install Php xlswriter Extension \
-      if [ $(php -r "echo PHP_MAJOR_VERSION;") != "5" ]; then \
-          pecl install xlswriter  &&\
-          docker-php-ext-enable xlswriter &&\
-          php -m | grep -q 'xlswriter'; \
-      else \
-          echo "PHP Extension for xlswriter is not supported for PHP 5.0";\
-      fi \
+      pecl install xlswriter  && \
+      docker-php-ext-enable xlswriter && \
+      php -m | grep -q 'xlswriter' \
     ;fi
 
 ###########################################################################
@@ -526,12 +441,8 @@ ARG INSTALL_MEMCACHED=false
 
 RUN if [ ${INSTALL_MEMCACHED} = true ]; then \
     # Install the php memcached extension
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      echo '' | pecl -q install memcached-2.2.0; \
-    else \
-      echo '' | pecl -q install memcached; \
-    fi \
-    && docker-php-ext-enable memcached \
+    echo '' | pecl -q install memcached; \
+    docker-php-ext-enable memcached \
 ;fi
 
 ###########################################################################
@@ -543,124 +454,6 @@ ARG INSTALL_EXIF=false
 RUN if [ ${INSTALL_EXIF} = true ]; then \
     # Enable Exif PHP extentions requirements
     docker-php-ext-install exif \
-;fi
-
-###########################################################################
-# PHP Aerospike:
-###########################################################################
-
-USER root
-
-ARG INSTALL_AEROSPIKE=false
-
-RUN set -xe; \
-    if [ ${INSTALL_AEROSPIKE} = true ]; then \
-    # Fix dependencies for PHPUnit within aerospike extension
-    apt-get -y install sudo wget && \
-    # Install the php aerospike extension
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      curl -L -o /tmp/aerospike-client-php.tar.gz https://github.com/aerospike/aerospike-client-php5/archive/master.tar.gz; \
-    else \
-      curl -L -o /tmp/aerospike-client-php.tar.gz https://github.com/aerospike/aerospike-client-php/archive/master.tar.gz; \
-    fi \
-    && mkdir -p /tmp/aerospike-client-php \
-    && tar -C /tmp/aerospike-client-php -zxvf /tmp/aerospike-client-php.tar.gz --strip 1 \
-    && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      ( \
-          cd /tmp/aerospike-client-php/src/aerospike \
-          && phpize \
-          && ./build.sh \
-          && make install \
-      ) \
-    else \
-      ( \
-          cd /tmp/aerospike-client-php/src \
-          && phpize \
-          && ./build.sh \
-          && make install \
-      ) \
-    fi \
-    && rm /tmp/aerospike-client-php.tar.gz \
-    && docker-php-ext-enable aerospike \
-;fi
-
-###########################################################################
-# PHP OCI8:
-###########################################################################
-
-ARG INSTALL_OCI8=false
-ARG ORACLE_INSTANT_CLIENT_MIRROR=https://github.com/the-paulus/oracle-instantclient/raw/master/
-ARG ORACLE_INSTANT_CLIENT_ARCH=x86_64
-ARG ORACLE_INSTANT_CLIENT_MAJOR=18
-ARG ORACLE_INSTANT_CLIENT_MINOR=3
-
-ENV ORACLE_INSTANT_CLIENT_VERSION=${ORACLE_INSTANT_CLIENT_MAJOR}_${ORACLE_INSTANT_CLIENT_MINOR}
-ENV LD_LIBRARY_PATH="/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}"
-ENV OCI_HOME="/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}"
-ENV OCI_LIB_DIR="/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}"
-ENV OCI_INCLUDE_DIR="/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/sdk/include"
-ENV OCI_VERSION=${ORACLE_INSTANT_CLIENT_MAJOR}
-
-RUN if [ ${INSTALL_OCI8} = true ]; then \
-    # Install wget
-    apt-get install --no-install-recommends -yqq wget \
-    # Install Oracle Instantclient
-    && mkdir /opt/oracle \
-        && cd /opt/oracle \
-        && wget ${ORACLE_INSTANT_CLIENT_MIRROR}instantclient-basic-linux.${ORACLE_INSTANT_CLIENT_ARCH}-${ORACLE_INSTANT_CLIENT_VERSION}.zip \
-      && wget ${ORACLE_INSTANT_CLIENT_MIRROR}instantclient-sdk-linux.${ORACLE_INSTANT_CLIENT_ARCH}-${ORACLE_INSTANT_CLIENT_VERSION}.zip \
-      && unzip /opt/oracle/instantclient-basic-linux.${ORACLE_INSTANT_CLIENT_ARCH}-${ORACLE_INSTANT_CLIENT_VERSION}.zip -d /opt/oracle \
-      && unzip /opt/oracle/instantclient-sdk-linux.${ORACLE_INSTANT_CLIENT_ARCH}-${ORACLE_INSTANT_CLIENT_VERSION}.zip -d /opt/oracle \
-      && if [ ${OCI_VERSION} -lt 18 ] ; then ln -s /opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/libclntsh.so.${ORACLE_INSTANT_CLIENT_MAJOR}.${ORACLE_INSTANT_CLIENT_MINOR} /opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/libclntsh.so ; fi\
-      && if [ ${OCI_VERSION} -lt 18 ] ; then ln -s /opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/libclntshcore.so.${ORACLE_INSTANT_CLIENT_MAJOR}.${ORACLE_INSTANT_CLIENT_MINOR} /opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/libclntshcore.so ; fi \
-      && if [ ${OCI_VERSION} -lt 18 ] ; then ln -s /opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/libocci.so.${ORACLE_INSTANT_CLIENT_MAJOR}.${ORACLE_INSTANT_CLIENT_MINOR} /opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/libocci.so ; fi \
-        && rm -rf /opt/oracle/*.zip \
-    # Install PHP extensions deps
-    && apt-get install --no-install-recommends -yqq \
-      libaio-dev \
-      freetds-dev && \
-    # Install PHP extensions
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      echo 'instantclient,/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/' | pecl install oci8-2.0.12; \
-    elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-      echo 'instantclient,/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/' | pecl install oci8-2.2.0; \
-    elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
-      echo "instantclient,/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/" | pecl install oci8-3.0.1; \
-    elif [ $(php -r "echo PHP_MAJOR_VERSION . PHP_MINOR_VERSION;") = "81" ]; then \
-        echo "instantclient,/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/" | pecl install oci8-3.2.1; \
-    else \
-      echo "instantclient,/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION}/" | pecl install oci8; \
-    fi \
-    && docker-php-ext-configure pdo_oci --with-pdo-oci=instantclient,/opt/oracle/instantclient_${ORACLE_INSTANT_CLIENT_VERSION},${ORACLE_INSTANT_CLIENT_MAJOR}.${ORACLE_INSTANT_CLIENT_MINOR} \
-        && docker-php-ext-configure pdo_dblib --with-libdir=/lib/x86_64-linux-gnu \
-        && docker-php-ext-install \
-                pdo_oci \
-        && docker-php-ext-enable \
-                oci8 \
-  ;fi
-
-###########################################################################
-# IonCube Loader:
-###########################################################################
-
-ARG INSTALL_IONCUBE=false
-
-RUN if [ ${INSTALL_IONCUBE} = true ]; then \
-    if [ ${CANTOR_PHP_VERSION} = "8.1" ] \
-      || [ ${CANTOR_PHP_VERSION} = "7.4" ] \
-      || [ ${CANTOR_PHP_VERSION} = "7.3" ] \
-      || [ ${CANTOR_PHP_VERSION} = "7.2" ] \
-      || [ ${CANTOR_PHP_VERSION} = "7.1" ] \
-      || [ ${CANTOR_PHP_VERSION} = "7.0" ]; then \
-      # Install the php ioncube loader
-      curl -L -o /tmp/ioncube_loaders_lin_x86-64.tar.gz https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz \
-      && tar zxpf /tmp/ioncube_loaders_lin_x86-64.tar.gz -C /tmp \
-      && mv /tmp/ioncube/ioncube_loader_lin_${CANTOR_PHP_VERSION}.so $(php -r "echo ini_get('extension_dir');")/ioncube_loader.so \
-      && printf "zend_extension=ioncube_loader.so\n" > $PHP_INI_DIR/conf.d/0ioncube.ini \
-      && rm -rf /tmp/ioncube* \
-      && php -m | grep -oiE '^ionCube Loader$' \
-    ;fi \
 ;fi
 
 ###########################################################################
@@ -735,49 +528,31 @@ ARG INSTALL_MSSQL=false
 
 RUN set -eux; \
   if [ ${INSTALL_MSSQL} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      apt-get -yqq install freetds-dev libsybdb5 \
-      && ln -s /usr/lib/x86_64-linux-gnu/libsybdb.so /usr/lib/libsybdb.so \
-      && docker-php-ext-install mssql pdo_dblib \
-      && php -m | grep -oiE '^mssql$' \
-      && php -m | grep -oiE '^pdo_dblib$' \
+    ###########################################################################
+    # Ref from https://github.com/Microsoft/msphpsql/wiki/Dockerfile-for-adding-pdo_sqlsrv-and-sqlsrv-to-official-php-image
+    ###########################################################################
+    # Add Microsoft repo for Microsoft ODBC Driver 13 for Linux \
+    apt-get update \
+    && apt-get install -yqq apt-transport-https gnupg lsb-release \
+    && if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] && [ ${CANTOR_PHP_VERSION} != "8.0" ]; then \
+      curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
     ;else \
-      ###########################################################################
-      # Ref from https://github.com/Microsoft/msphpsql/wiki/Dockerfile-for-adding-pdo_sqlsrv-and-sqlsrv-to-official-php-image
-      ###########################################################################
-      # Add Microsoft repo for Microsoft ODBC Driver 13 for Linux \
-      apt-get update \
-      && apt-get install -yqq apt-transport-https gnupg lsb-release \
-      && if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] && [ ${CANTOR_PHP_VERSION} != "8.0" ]; then \
-        curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
-      ;else \
-        curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-      ;fi \
-      && curl https://packages.microsoft.com/config/debian/$(lsb_release -rs)/prod.list > /etc/apt/sources.list.d/mssql-release.list \
-      && apt-get update -yqq \
-      && ACCEPT_EULA=Y apt-get install -yqq unixodbc unixodbc-dev libgss3 odbcinst msodbcsql18 locales \
-      && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
-      && ln -sfn /etc/locale.alias /usr/share/locale/locale.alias \
-      && locale-gen \
-      && if [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70000" ]; then \
-        pecl install pdo_sqlsrv-5.3.0 sqlsrv-5.3.0 \
-      ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70100" ]; then \
-        pecl install pdo_sqlsrv-5.6.1 sqlsrv-5.6.1 \
-      ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70200" ]; then \
-        pecl install pdo_sqlsrv-5.8.1 sqlsrv-5.8.1 \
-      ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70300" ]; then \
-        pecl install pdo_sqlsrv-5.9.0 sqlsrv-5.9.0 \
-      ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70400" ]; then \
-        pecl install pdo_sqlsrv-5.10.1 sqlsrv-5.10.1 \
-      ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "80000" ]; then \
-        pecl install pdo_sqlsrv-5.11.1 sqlsrv-5.11.1 \
-      ;else \
-        pecl install pdo_sqlsrv sqlsrv \
-      ;fi \
-      && docker-php-ext-enable pdo_sqlsrv sqlsrv \
-      && php -m | grep -oiE '^pdo_sqlsrv$' \
-      && php -m | grep -oiE '^sqlsrv$' \
+      curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
     ;fi \
+    && curl https://packages.microsoft.com/config/debian/$(lsb_release -rs)/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update -yqq \
+    && ACCEPT_EULA=Y apt-get install -yqq unixodbc unixodbc-dev libgss3 odbcinst msodbcsql18 locales \
+    && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
+    && ln -sfn /etc/locale.alias /usr/share/locale/locale.alias \
+    && locale-gen \
+    && if [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "80000" ]; then \
+      pecl install pdo_sqlsrv-5.11.1 sqlsrv-5.11.1 \
+    ;else \
+      pecl install pdo_sqlsrv sqlsrv \
+    ;fi \
+    && docker-php-ext-enable pdo_sqlsrv sqlsrv \
+    && php -m | grep -oiE '^pdo_sqlsrv$' \
+    && php -m | grep -oiE '^sqlsrv$' \
   ;fi
 
 ###########################################################################
@@ -869,11 +644,7 @@ RUN if [ ${INSTALL_CALENDAR} = true ]; then \
 ARG INSTALL_APCU=false
 
 RUN if [ ${INSTALL_APCU} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        pecl install -a apcu-4.0.11; \
-    else \
-        pecl install apcu; \
-    fi && \
+    pecl install apcu; \
     docker-php-ext-enable apcu \
 ;fi
 
@@ -887,14 +658,8 @@ ARG INSTALL_YAML=false
 
 RUN if [ ${INSTALL_YAML} = true ]; then \
     apt-get install -yqq libyaml-dev; \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        echo '' | pecl install -a yaml-1.3.2; \
-    elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
-        echo '' | pecl install yaml-2.0.4; \
-    else \
-        echo '' | pecl install yaml; \
-    fi \
-    && docker-php-ext-enable yaml \
+    echo '' | pecl install yaml; \
+    docker-php-ext-enable yaml \
 ;fi
 
 ###########################################################################
@@ -1055,16 +820,7 @@ RUN if [ ${INSTALL_WKHTMLTOPDF} = true ]; then \
       xfonts-75dpi \
       wget \
     # && cat /etc/os-release \
-    && if [ ${CANTOR_PHP_VERSION} = "7.0" ]; then \
-      wget "https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.stretch_${ARCH}.deb"; \
-      dpkg -i "wkhtmltox_0.12.6-1.stretch_${ARCH}.deb"; \
-    elif [ ${CANTOR_PHP_VERSION} = "7.1" ] || \
-        [ ${CANTOR_PHP_VERSION} = "7.2" ] || \
-        [ ${CANTOR_PHP_VERSION} = "7.3" ] || \
-        [ ${CANTOR_PHP_VERSION} = "7.4" ]; then \
-      wget "https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_${ARCH}.deb"; \
-      dpkg -i "wkhtmltox_0.12.6-1.buster_${ARCH}.deb"; \
-    elif [ ${CANTOR_PHP_VERSION} = "8.0" ]; then \
+    && if [ ${CANTOR_PHP_VERSION} = "8.0" ]; then \
       wget "https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.bullseye_${ARCH}.deb"; \
       dpkg -i "wkhtmltox_${WKHTMLTOPDF_VERSION}.bullseye_${ARCH}.deb"; \
     else \
@@ -1106,11 +862,7 @@ RUN if [ ${INSTALL_MAILPARSE} = true ]; then \
 ARG INSTALL_CACHETOOL=false
 
 RUN if [ ${INSTALL_CACHETOOL} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") -ge 1 ]; then \
-            curl -sO https://gordalina.github.io/cachetool/downloads/cachetool.phar; \
-    else \
-        curl https://gordalina.github.io/cachetool/downloads/cachetool-3.2.1.phar -o cachetool.phar; \
-    fi && \
+    curl https://gordalina.github.io/cachetool/downloads/cachetool-3.2.1.phar -o cachetool.phar; \
     chmod +x cachetool.phar && \
     mv cachetool.phar /usr/local/bin/cachetool \
 ;fi
@@ -1170,11 +922,7 @@ RUN set -eux; \
       cd /tmp/php-zookeeper; \
       phpize && ./configure && make && make install;\
     else \
-      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        pecl install zookeeper-0.5.0; \
-      else \
-        pecl install zookeeper-0.7.2; \
-      fi; \
+      pecl install zookeeper-0.7.2; \
     fi; \
     docker-php-ext-enable zookeeper; \
     php -m | grep -q 'zookeeper'; \
@@ -1211,12 +959,8 @@ ARG INSTALL_SSDB=false
 
 RUN set -xe; \
     if [ ${INSTALL_SSDB} = true ] && [ $(php -r "echo PHP_MAJOR_VERSION;") != "8" ]; then \
-    apt-get -y install sudo wget && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-      curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/php7.tar.gz; \
-    else \
-      curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/master.tar.gz; \
-    fi \
+    apt-get -y install sudo wget \
+    && curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/master.tar.gz \
     && mkdir -p /tmp/ssdb-client-php \
     && tar -C /tmp/ssdb-client-php -zxvf /tmp/ssdb-client-php.tar.gz --strip 1 \
     && cd /tmp/ssdb-client-php \

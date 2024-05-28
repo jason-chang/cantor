@@ -31,13 +31,7 @@ RUN apk --update add wget \
   libgsasl-dev \
   oniguruma-dev \
   supervisor; \
-  if [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "50600" ] || \
-     [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70000" ]; then \
-    apk --update add libressl libressl-dev; \
-  else \
-    apk --update add openssl-dev; \
-  fi
-
+  apk --update add openssl-dev
 
 RUN pecl channel-update pecl.php.net; \
   docker-php-ext-install mysqli mbstring pdo pdo_mysql xml pcntl; \
@@ -80,17 +74,7 @@ ARG INSTALL_GNUPG=false
 RUN set -eux; \
   if [ ${INSTALL_GNUPG} = true ]; then \
     apk add --no-cache --no-progress --virtual BUILD_DEPS_PHP_GNUPG gpgme-dev; \
-    if [ ${CANTOR_PHP_VERSION} = "7.0" ]; then \
-      wget -O /tmp/gnupg.tgz "https://pecl.php.net/get/gnupg-1.5.1.tgz"; \
-      mkdir -p /tmp/gnupg; \
-      tar -C /tmp/gnupg -zxvf /tmp/gnupg.tgz --strip 1; \
-      cd /tmp/gnupg; \
-      phpize; \
-      ./configure; \
-      make && make install; \
-    else \
-      pecl install gnupg; \
-    fi; \
+    pecl install gnupg; \
     docker-php-ext-enable gnupg; \
     php -m | grep -oiE '^gnupg$'; \
   fi
@@ -106,13 +90,9 @@ RUN set -eux; if [ ${INSTALL_LDAP} = true ]; then \
 #Install GD package:
 ARG INSTALL_GD=false
 RUN if [ ${INSTALL_GD} = true ]; then \
-  apk add --update --no-cache freetype-dev libjpeg-turbo-dev jpeg-dev libpng-dev; \
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ]; then \
-  docker-php-ext-configure gd --with-freetype --with-jpeg; \
-  else \
-  docker-php-ext-configure gd --with-freetype-dir=/usr/lib/ --with-jpeg-dir=/usr/lib/ --with-png-dir=/usr/lib/; \
-  fi; \
-  docker-php-ext-install gd \
+    apk add --update --no-cache freetype-dev libjpeg-turbo-dev jpeg-dev libpng-dev; \
+    docker-php-ext-configure gd --with-freetype-dir=/usr/lib/ --with-jpeg-dir=/usr/lib/ --with-png-dir=/usr/lib/; \
+    docker-php-ext-install gd \
   ;fi
 
 #Install ImageMagick:
@@ -155,74 +135,13 @@ RUN if [ ${INSTALL_BCMATH} = true ]; then \
   docker-php-ext-install bcmath \
   ;fi
 
-#Install SOAP package:
-ARG INSTALL_SOAP=false
-RUN if [ ${INSTALL_SOAP} = true ]; then \
-  docker-php-ext-install soap \
-  ;fi
-
 # Install MongoDB drivers:
 ARG INSTALL_MONGO=false
 RUN if [ ${INSTALL_MONGO} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl install mongo; \
-      docker-php-ext-enable mongo; \
-      php -m | grep -oiE '^mongo$'; \
-    else \
-      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") != "4" ]; then \
-        if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "1" ]; then \
-          pecl install mongodb-1.9.2; \
-        else \
-          pecl install mongodb-1.16.2; \
-        fi; \
-      else \
-        pecl install mongodb; \
-      fi; \
-      docker-php-ext-enable mongodb; \
-      php -m | grep -oiE '^mongodb$'; \
-    fi; \
+    pecl install mongodb; \
+    docker-php-ext-enable mongodb; \
+    php -m | grep -oiE '^mongodb$'; \
   fi
-
-###########################################################################
-# PHP OCI8:
-###########################################################################
-
-ARG INSTALL_OCI8=false
-
-ENV LD_LIBRARY_PATH="/usr/local/instantclient"
-ENV ORACLE_HOME="/usr/local/instantclient"
-
-RUN if [ ${INSTALL_OCI8} = true ] && [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-  apk add make php7-pear php7-dev gcc musl-dev libnsl libaio poppler-utils libzip-dev zip unzip libaio-dev freetds-dev && \
-  ## Download and unarchive Instant Client v11
-  curl -o /tmp/basic.zip https://raw.githubusercontent.com/bumpx/oracle-instantclient/master/instantclient-basic-linux.x64-11.2.0.4.0.zip && \
-  curl -o /tmp/sdk.zip https://raw.githubusercontent.com/bumpx/oracle-instantclient/master/instantclient-sdk-linux.x64-11.2.0.4.0.zip && \
-  curl -o /tmp/sqlplus.zip https://raw.githubusercontent.com/bumpx/oracle-instantclient/master/instantclient-sqlplus-linux.x64-11.2.0.4.0.zip && \
-  unzip -d /usr/local/ /tmp/basic.zip && \
-  unzip -d /usr/local/ /tmp/sdk.zip && \
-  unzip -d /usr/local/ /tmp/sqlplus.zip \
-  ## Links are required for older SDKs
-  && ln -s /usr/local/instantclient_11_2 ${ORACLE_HOME} && \
-  ln -s ${ORACLE_HOME}/libclntsh.so.* ${ORACLE_HOME}/libclntsh.so && \
-  ln -s ${ORACLE_HOME}/libocci.so.* ${ORACLE_HOME}/libocci.so && \
-  ln -s ${ORACLE_HOME}/lib* /usr/lib && \
-  ln -s ${ORACLE_HOME}/sqlplus /usr/bin/sqlplus &&\
-  ln -s /usr/lib/libnsl.so.2.0.0  /usr/lib/libnsl.so.1 && \
-  ## Build OCI8 with PECL
-  echo "instantclient,${ORACLE_HOME}" | pecl install oci8 && \
-  echo 'extension=oci8.so' > /etc/php7/conf.d/30-oci8.ini \
-  #  Clean up
-  apk del php7-pear php7-dev gcc musl-dev && \
-  rm -rf /tmp/*.zip /tmp/pear/ && \
-  docker-php-ext-configure pdo_oci --with-pdo-oci=instantclient,/usr/local/instantclient \
-  && docker-php-ext-configure pdo_dblib --with-libdir=/lib \
-  && docker-php-ext-install pdo_oci \
-  && docker-php-ext-enable oci8 \
-  && docker-php-ext-install zip && \
-  # Install the zip extension
-  docker-php-ext-configure zip && \
-  php -m | grep -q 'zip' \
-  ;fi
 
 # Install PostgreSQL drivers:
 ARG INSTALL_PGSQL=false
@@ -236,11 +155,7 @@ ARG INSTALL_ZIP_ARCHIVE=false
 RUN set -eux; \
   if [ ${INSTALL_ZIP_ARCHIVE} = true ]; then \
     apk --update add libzip-dev && \
-    if [ ${CANTOR_PHP_VERSION} = "7.3" ] || [ ${CANTOR_PHP_VERSION} = "7.4" ]; then \
-      docker-php-ext-configure zip; \
-    else \
-      docker-php-ext-configure zip --with-libzip; \
-    fi && \
+    docker-php-ext-configure zip --with-libzip; \
     # Install the zip extension
     docker-php-ext-install zip \
 ;fi
@@ -298,16 +213,9 @@ RUN if [ ${INSTALL_POPPLER_UTILS} = true ]; then \
 ARG INSTALL_AMQP=false
 
 RUN if [ ${INSTALL_AMQP} = true ]; then \
-  docker-php-ext-install sockets; \
-  apk --update add -q rabbitmq-c rabbitmq-c-dev && \
-  if [ ${CANTOR_PHP_VERSION} = "7.3" ] \
-    || [ ${CANTOR_PHP_VERSION} = "7.2" ] \
-    || [ ${CANTOR_PHP_VERSION} = "7.1" ] \
-    || [ ${CANTOR_PHP_VERSION} = "7.0" ]; then \
-    printf "\n" | pecl install amqp-1.11.0; \
-  else \
+    docker-php-ext-install sockets; \
+    apk --update add -q rabbitmq-c rabbitmq-c-dev && \
     printf "\n" | pecl install amqp; \
-  fi && \
     docker-php-ext-enable amqp && \
     apk del -q rabbitmq-c-dev; \
     php -m | grep -oiE '^amqp$' \
@@ -351,11 +259,7 @@ RUN if [ ${INSTALL_CASSANDRA} = true ]; then \
 ARG INSTALL_APCU=false
 
 RUN if [ ${INSTALL_APCU} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        pecl install -a apcu-4.0.11; \
-    else \
-        pecl install apcu; \
-    fi && \
+    pecl install apcu; \
     docker-php-ext-enable apcu \
 ;fi
 
@@ -367,14 +271,10 @@ RUN if [ $INSTALL_GHOSTSCRIPT = true ]; then \
 # Install Redis package:
 ARG INSTALL_REDIS=false
 RUN if [ ${INSTALL_REDIS} = true ]; then \
-  # Install Redis Extension
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-  printf "\n" | pecl install -o -f redis-4.3.0; \
-  else \
-  printf "\n" | pecl install -o -f redis; \
-  fi; \
-  rm -rf /tmp/pear; \
-  docker-php-ext-enable redis \
+    # Install Redis Extension
+    printf "\n" | pecl install -o -f redis; \
+    rm -rf /tmp/pear; \
+    docker-php-ext-enable redis \
   ;fi
 
 ###########################################################################
@@ -386,17 +286,7 @@ ARG INSTALL_SWOOLE=false
 RUN set -eux; \
   if [ ${INSTALL_SWOOLE} = true ]; then \
     # Install Php Swoole Extension
-    if   [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "50600" ]; then \
-      pecl install swoole-2.0.10; \
-    elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70000" ]; then \
-      pecl install swoole-4.3.5; \
-    elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70100" ]; then \
-      pecl install swoole-4.5.11; \
-    elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-      pecl install swoole-4.8.12; \
-    else \
-      pecl install swoole; \
-    fi; \
+    pecl install swoole; \
     docker-php-ext-enable swoole; \
     php -m | grep -oiE '^swoole$'; \
   fi
@@ -410,13 +300,9 @@ ARG INSTALL_XLSWRITER=false
 RUN set -eux; \
     if [ ${INSTALL_XLSWRITER} = true ]; then \
       # Install Php xlswriter Extension \
-      if   [ $(php -r "echo PHP_MAJOR_VERSION;") != "5" ]; then \
-          pecl install xlswriter && \
-          docker-php-ext-enable xlswriter && \
-          php -m | grep -q 'xlswriter'; \
-      else \
-          echo "PHP Extension for xlswriter is not supported for PHP 5.0"; \
-      fi \
+      pecl install xlswriter && \
+      docker-php-ext-enable xlswriter && \
+      php -m | grep -q 'xlswriter' \
     ;fi
 
 ###########################################################################
@@ -426,14 +312,10 @@ RUN set -eux; \
 ARG INSTALL_TAINT=false
 
 RUN if [ ${INSTALL_TAINT} = true ]; then \
-  # Install Php TAINT Extension
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-  pecl install taint; \
-  docker-php-ext-enable taint; \
-  php -m | grep -q 'taint'; \
-  else \
-  echo 'taint not Support'; \
-  fi \
+    # Install Php TAINT Extension
+    pecl install taint; \
+    docker-php-ext-enable taint; \
+    php -m | grep -q 'taint' \
   ;fi
 
 ###########################################################################
@@ -471,15 +353,11 @@ RUN if [ ${INSTALL_XMLRPC} = true ]; then \
 ARG INSTALL_MEMCACHED=false
 
 RUN if [ ${INSTALL_MEMCACHED} = true ]; then \
-  apk --update add libmemcached-dev; \
-  # Install the php memcached extension
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-  pecl install memcached-2.2.0; \
-  else \
-  pecl install memcached; \
-  fi; \
-  docker-php-ext-enable memcached; \
-  php -m | grep -r 'memcached'; \
+    apk --update add libmemcached-dev; \
+    # Install the php memcached extension
+    pecl install memcached; \
+    docker-php-ext-enable memcached; \
+    php -m | grep -r 'memcached'; \
   fi
 
 ###########################################################################
@@ -495,18 +373,6 @@ RUN set -eux; \
   # Ref from:
   # - https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15#alpine17
   ###########################################################################
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-  # Add Microsoft repo for Microsoft ODBC Driver 17 for Linux
-  # Driver version 17.10 or higher is required for Alpine support.
-  # Download the desired package(s)
-  curl -O https://download.microsoft.com/download/e/4/e/e4e67866-dffd-428c-aac7-8d28ddafb39b/msodbcsql17_17.10.5.1-1_amd64.apk \
-  # Verify signature, if 'gpg' is missing install it using 'apk add gnupg':
-  && curl -O https://download.microsoft.com/download/e/4/e/e4e67866-dffd-428c-aac7-8d28ddafb39b/msodbcsql17_17.10.5.1-1_amd64.sig \
-  && curl https://packages.microsoft.com/keys/microsoft.asc  | gpg --import - \
-  && gpg --verify msodbcsql17_17.10.5.1-1_amd64.sig msodbcsql17_17.10.5.1-1_amd64.apk \
-  # Install the package(s)
-  && apk add --allow-untrusted msodbcsql17_17.10.5.1-1_amd64.apk unixodbc-dev \
-  ;else \
   # Add Microsoft repo for Microsoft ODBC Driver 18 for Linux
   # Driver version 18.5 or higher is required for Alpine support.
   # Download the desired package(s)
@@ -517,19 +383,8 @@ RUN set -eux; \
   && gpg --verify msodbcsql18_18.3.2.1-1_amd64.sig msodbcsql18_18.3.2.1-1_amd64.apk \
   # Install the package(s)
   && apk add --allow-untrusted msodbcsql18_18.3.2.1-1_amd64.apk unixodbc-dev \
-  ;fi \
   # 
-  && if [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70000" ]; then \
-    pecl install pdo_sqlsrv-5.3.0 sqlsrv-5.3.0 \
-  ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70100" ]; then \
-    pecl install pdo_sqlsrv-5.6.1 sqlsrv-5.6.1 \
-  ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70200" ]; then \
-    pecl install pdo_sqlsrv-5.8.1 sqlsrv-5.8.1 \
-  ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70300" ]; then \
-    pecl install pdo_sqlsrv-5.9.0 sqlsrv-5.9.0 \
-  ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70400" ]; then \
-    pecl install pdo_sqlsrv-5.10.1 sqlsrv-5.10.1 \
-  ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "80000" ]; then \
+  && if [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "80000" ]; then \
     pecl install pdo_sqlsrv-5.11.1 sqlsrv-5.11.1 \
   ;else \
     pecl install pdo_sqlsrv sqlsrv \
@@ -551,21 +406,17 @@ ARG INSTALL_SSDB=false
 
 RUN set -xe; \
   if [ ${INSTALL_SSDB} = true ] && [ $(php -r "echo PHP_MAJOR_VERSION;") != "8" ]; then \
-  apk --update add sudo wget && \
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-  curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/php7.tar.gz; \
-  else \
-  curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/master.tar.gz; \
-  fi \
-  && mkdir -p /tmp/ssdb-client-php \
-  && tar -C /tmp/ssdb-client-php -zxvf /tmp/ssdb-client-php.tar.gz --strip 1 \
-  && cd /tmp/ssdb-client-php \
-  && phpize \
-  && ./configure \
-  && make \
-  && make install \
-  && rm /tmp/ssdb-client-php.tar.gz \
-  && docker-php-ext-enable ssdb \
+    apk --update add sudo wget \
+    && curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/master.tar.gz \
+    && mkdir -p /tmp/ssdb-client-php \
+    && tar -C /tmp/ssdb-client-php -zxvf /tmp/ssdb-client-php.tar.gz --strip 1 \
+    && cd /tmp/ssdb-client-php \
+    && phpize \
+    && ./configure \
+    && make \
+    && make install \
+    && rm /tmp/ssdb-client-php.tar.gz \
+    && docker-php-ext-enable ssdb \
   ;fi
 
 ###########################################################################
