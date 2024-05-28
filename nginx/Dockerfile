@@ -5,7 +5,7 @@ COPY nginx.conf /etc/nginx/
 # If you're in China, or you need to change sources, will be set USE_MIRRORS to true in .env.
 
 ARG USE_MIRRORS=false
-RUN if [ ${USE_MIRRORS}} = true ]; then \
+RUN if [ ${USE_MIRRORS} = true ]; then \
     # Change application source from dl-cdn.alpinelinux.org to aliyun source
     sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/' /etc/apk/repositories \
 ;fi
