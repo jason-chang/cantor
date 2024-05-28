@@ -60,8 +60,9 @@ RUN if [ ${INSTALL_BZ2} = true ]; then \
 
 ARG INSTALL_DS=false
 RUN if [ ${INSTALL_DS} = true ]; then \
-  pecl install ds \
-;fi
+  pecl install ds; \
+  docker-php-ext-enable ds; \
+fi
 
 ###########################################################################
 # Enchant:

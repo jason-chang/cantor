@@ -68,6 +68,7 @@ fi
 ARG INSTALL_DS=false
 RUN if [ ${INSTALL_DS} = true ]; then \
   pecl install ds; \
+  docker-php-ext-enable ds; \
 fi
 
 ###########################################################################
