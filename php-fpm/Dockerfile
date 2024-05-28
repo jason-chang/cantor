@@ -43,6 +43,7 @@ RUN set -xe; \
 #   - INSTALL_SOAP=true
 #
 
+
 ###########################################################################
 # BZ2:
 ###########################################################################
@@ -51,6 +52,15 @@ ARG INSTALL_BZ2=false
 RUN if [ ${INSTALL_BZ2} = true ]; then \
   apt-get -yqq install libbz2-dev; \
   docker-php-ext-install bz2 \
+;fi
+
+###########################################################################
+# Data Structures:
+###########################################################################
+
+ARG INSTALL_DS=false
+RUN if [ ${INSTALL_DS} = true ]; then \
+  pecl install ds \
 ;fi
 
 ###########################################################################
@@ -402,8 +412,7 @@ RUN set -eux; \
       if [ ${CANTOR_PHP_VERSION} = "7.3" ] \
         || [ ${CANTOR_PHP_VERSION} = "7.2" ] \
         || [ ${CANTOR_PHP_VERSION} = "7.1" ] \
-        || [ ${CANTOR_PHP_VERSION} = "7.0" ] \
-        || [ ${CANTOR_PHP_VERSION} = "5.6" ]; then \
+        || [ ${CANTOR_PHP_VERSION} = "7.0" ]; then \
         pecl install amqp-1.11.0; \
       else \
         pecl install amqp; \
@@ -642,8 +651,7 @@ RUN if [ ${INSTALL_IONCUBE} = true ]; then \
       || [ ${CANTOR_PHP_VERSION} = "7.3" ] \
       || [ ${CANTOR_PHP_VERSION} = "7.2" ] \
       || [ ${CANTOR_PHP_VERSION} = "7.1" ] \
-      || [ ${CANTOR_PHP_VERSION} = "7.0" ] \
-      || [ ${CANTOR_PHP_VERSION} = "5.6" ]; then \
+      || [ ${CANTOR_PHP_VERSION} = "7.0" ]; then \
       # Install the php ioncube loader
       curl -L -o /tmp/ioncube_loaders_lin_x86-64.tar.gz https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz \
       && tar zxpf /tmp/ioncube_loaders_lin_x86-64.tar.gz -C /tmp \
@@ -1046,8 +1054,7 @@ RUN if [ ${INSTALL_WKHTMLTOPDF} = true ]; then \
       xfonts-75dpi \
       wget \
     # && cat /etc/os-release \
-    && if [ ${CANTOR_PHP_VERSION} = "5.6" ] || \
-        [ ${CANTOR_PHP_VERSION} = "7.0" ]; then \
+    && if [ ${CANTOR_PHP_VERSION} = "7.0" ]; then \
       wget "https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.stretch_${ARCH}.deb"; \
       dpkg -i "wkhtmltox_0.12.6-1.stretch_${ARCH}.deb"; \
     elif [ ${CANTOR_PHP_VERSION} = "7.1" ] || \
@@ -1132,23 +1139,19 @@ USER root
 ARG INSTALL_PHPDECIMAL=false
 
 RUN if [ ${INSTALL_PHPDECIMAL} = true ]; then \
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-    echo 'decimal not support PHP 5.6'; \
+  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] && \
+      [ ${CANTOR_PHP_VERSION} != "8.0" ]; then \
+    curl -L -o /tmp/mpdecimal.tar.gz "https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-2.5.1.tar.gz"; \
+    mkdir -p /tmp/mpdecimal; \
+    tar -C /tmp/mpdecimal -zxvf /tmp/mpdecimal.tar.gz --strip 1; \
+    cd /tmp/mpdecimal; \
+    ./configure && make && make install; \
   else \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] && \
-        [ ${CANTOR_PHP_VERSION} != "8.0" ]; then \
-      curl -L -o /tmp/mpdecimal.tar.gz "https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-2.5.1.tar.gz"; \
-      mkdir -p /tmp/mpdecimal; \
-      tar -C /tmp/mpdecimal -zxvf /tmp/mpdecimal.tar.gz --strip 1; \
-      cd /tmp/mpdecimal; \
-      ./configure && make && make install; \
-    else \
-      apt-get install -yqq libmpdec-dev; \
-    fi; \
-    pecl install decimal; \
-    docker-php-ext-enable decimal; \
-    php -m | grep -oiE '^decimal$'; \
+    apt-get install -yqq libmpdec-dev; \
   fi; \
+  pecl install decimal; \
+  docker-php-ext-enable decimal; \
+  php -m | grep -oiE '^decimal$'; \
 fi
 
 ###########################################################################

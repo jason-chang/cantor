@@ -7,8 +7,6 @@
 ARG CANTOR_PHP_VERSION
 FROM php:${CANTOR_PHP_VERSION}-alpine
 
-LABEL maintainer="Mahmoud Zalt <mahmoud@zalt.me>"
-
 ARG CANTOR_PHP_VERSION
 
 # If you're in China, or you need to change sources, will be set USE_MIRRORS to true in .env.
@@ -64,6 +62,12 @@ ARG INSTALL_BZ2=false
 RUN if [ ${INSTALL_BZ2} = true ]; then \
   apk --update add bzip2-dev; \
   docker-php-ext-install bz2; \
+fi
+
+#Install Data Structures:
+ARG INSTALL_DS=false
+RUN if [ ${INSTALL_DS} = true ]; then \
+  pecl install ds; \
 fi
 
 ###########################################################################
@@ -298,8 +302,7 @@ RUN if [ ${INSTALL_AMQP} = true ]; then \
   if [ ${CANTOR_PHP_VERSION} = "7.3" ] \
     || [ ${CANTOR_PHP_VERSION} = "7.2" ] \
     || [ ${CANTOR_PHP_VERSION} = "7.1" ] \
-    || [ ${CANTOR_PHP_VERSION} = "7.0" ] \
-    || [ ${CANTOR_PHP_VERSION} = "5.6" ]; then \
+    || [ ${CANTOR_PHP_VERSION} = "7.0" ]; then \
     printf "\n" | pecl install amqp-1.11.0; \
   else \
     printf "\n" | pecl install amqp; \

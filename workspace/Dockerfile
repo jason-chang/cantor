@@ -228,6 +228,7 @@ RUN if [ ${INSTALL_WP_CLI} = true ]; then \
 ###########################################################################
 USER root
 
+ARG INSTALL_DS=false
 ARG INSTALL_BZ2=false
 ARG INSTALL_GMP=false
 ARG INSTALL_GNUPG=false
@@ -242,6 +243,12 @@ RUN set -eux; \
     ###########################################################################
     if [ ${INSTALL_BZ2} = true ]; then \
       apt-get -yqq install php${CANTOR_PHP_VERSION}-bz2; \
+    fi; \
+    ###########################################################################
+    # Data Structures:
+    ###########################################################################
+    if [ ${INSTALL_DS} = true ]; then \
+      apt-get -yqq install php${CANTOR_PHP_VERSION}-ds; \
     fi; \
     ###########################################################################
     # GMP (GNU Multiple Precision):
@@ -471,8 +478,7 @@ RUN if [ ${INSTALL_AMQP} = true ]; then \
     if [ ${CANTOR_PHP_VERSION} = "7.3" ] \
       || [ ${CANTOR_PHP_VERSION} = "7.2" ] \
       || [ ${CANTOR_PHP_VERSION} = "7.1" ] \
-      || [ ${CANTOR_PHP_VERSION} = "7.0" ] \
-      || [ ${CANTOR_PHP_VERSION} = "5.6" ]; then \
+      || [ ${CANTOR_PHP_VERSION} = "7.0" ]; then \
       printf "\n" | pecl install amqp-1.11.0; \
     else \
       printf "\n" | pecl install amqp; \
@@ -1084,43 +1090,37 @@ ARG INSTALL_MSSQL=false
 
 RUN set -eux; \
   if [ ${INSTALL_MSSQL} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      apt-get install -yqq php5.6-sybase freetds-bin freetds-common libsybdb5 \
-      && php -m | grep -oiE '^mssql$' \
-      && php -m | grep -oiE '^pdo_dblib$' \
+    ###########################################################################
+    #  The following steps were taken from
+    #  https://github.com/Microsoft/msphpsql/wiki/Install-and-configuration
+    ###########################################################################
+    curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+    curl https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
+    apt-get update -yqq && \
+    ACCEPT_EULA=Y apt-get install -yqq msodbcsql18 mssql-tools18 unixodbc unixodbc-dev libgss3 odbcinst locales && \
+    ln -sfn /opt/mssql-tools/bin/sqlcmd /usr/bin/sqlcmd && \
+    ln -sfn /opt/mssql-tools/bin/bcp /usr/bin/bcp && \
+    echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
+    locale-gen \
+    && if [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70000" ]; then \
+      pecl install pdo_sqlsrv-5.3.0 sqlsrv-5.3.0 \
+    ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70100" ]; then \
+      pecl install pdo_sqlsrv-5.6.1 sqlsrv-5.6.1 \
+    ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70200" ]; then \
+      pecl install pdo_sqlsrv-5.8.1 sqlsrv-5.8.1 \
+    ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70300" ]; then \
+      pecl install pdo_sqlsrv-5.9.0 sqlsrv-5.9.0 \
+    ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70400" ]; then \
+      pecl install pdo_sqlsrv-5.10.1 sqlsrv-5.10.1 \
+    ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "80000" ]; then \
+      pecl install pdo_sqlsrv-5.11.1 sqlsrv-5.11.1 \
     ;else \
-      ###########################################################################
-      #  The following steps were taken from
-      #  https://github.com/Microsoft/msphpsql/wiki/Install-and-configuration
-      ###########################################################################
-      curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
-      curl https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
-      apt-get update -yqq && \
-      ACCEPT_EULA=Y apt-get install -yqq msodbcsql18 mssql-tools18 unixodbc unixodbc-dev libgss3 odbcinst locales && \
-      ln -sfn /opt/mssql-tools/bin/sqlcmd /usr/bin/sqlcmd && \
-      ln -sfn /opt/mssql-tools/bin/bcp /usr/bin/bcp && \
-      echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
-      locale-gen \
-      && if [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70000" ]; then \
-        pecl install pdo_sqlsrv-5.3.0 sqlsrv-5.3.0 \
-      ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70100" ]; then \
-        pecl install pdo_sqlsrv-5.6.1 sqlsrv-5.6.1 \
-      ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70200" ]; then \
-        pecl install pdo_sqlsrv-5.8.1 sqlsrv-5.8.1 \
-      ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70300" ]; then \
-        pecl install pdo_sqlsrv-5.9.0 sqlsrv-5.9.0 \
-      ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70400" ]; then \
-        pecl install pdo_sqlsrv-5.10.1 sqlsrv-5.10.1 \
-      ;elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "80000" ]; then \
-        pecl install pdo_sqlsrv-5.11.1 sqlsrv-5.11.1 \
-      ;else \
-        pecl install pdo_sqlsrv sqlsrv \
-      ;fi && \
-      echo "extension=pdo_sqlsrv.so" > /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/20-pdo_sqlsrv.ini && \
-      echo "extension=sqlsrv.so"     > /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/20-sqlsrv.ini && \
-      php -m | grep -oiE '^pdo_sqlsrv$' && \
-      php -m | grep -oiE '^sqlsrv$' \
-    ;fi \
+      pecl install pdo_sqlsrv sqlsrv \
+    ;fi && \
+    echo "extension=pdo_sqlsrv.so" > /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/20-pdo_sqlsrv.ini && \
+    echo "extension=sqlsrv.so"     > /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/20-sqlsrv.ini && \
+    php -m | grep -oiE '^pdo_sqlsrv$' && \
+    php -m | grep -oiE '^sqlsrv$' \
   ;fi
 
 ###########################################################################
@@ -1665,15 +1665,11 @@ USER root
 ARG INSTALL_PHPDECIMAL=false
 
 RUN if [ ${INSTALL_PHPDECIMAL} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      echo 'decimal not support PHP 5.6'; \
-    else \
-      apt-get install -yqq libmpdec-dev \
-      && pecl install decimal \
-      && echo "extension=decimal.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/decimal.ini \
-      && ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/decimal.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/30-decimal.ini \
-      && php -m | grep -q 'decimal' \
-    ;fi \
+    apt-get install -yqq libmpdec-dev \
+    && pecl install decimal \
+    && echo "extension=decimal.so" >> /etc/php/${CANTOR_PHP_VERSION}/mods-available/decimal.ini \
+    && ln -s /etc/php/${CANTOR_PHP_VERSION}/mods-available/decimal.ini /etc/php/${CANTOR_PHP_VERSION}/cli/conf.d/30-decimal.ini \
+    && php -m | grep -q 'decimal' \
 ;fi
 
 ###########################################################################
