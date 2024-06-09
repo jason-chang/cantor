@@ -1367,7 +1367,7 @@ USER root
 
 ARG SHELL_OH_MY_ZSH=false
 RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
-    apt install -y zsh \
+  apt-get update && apt install -y zsh \
 ;fi
 
 ARG SHELL_OH_MY_ZSH_AUTOSUGESTIONS=false
@@ -1375,7 +1375,12 @@ ARG SHELL_OH_MY_ZSH_ALIASES=false
 
 USER cantor
 RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --keep-zshrc" && \
+    if [ ${USE_MIRRORS} = true ]; then \
+      export REMOTE="https://gitee.com/mirrors/oh-my-zsh.git" && \
+      sh -c "$(curl -fsSL https://gitee.com/mirrors/oh-my-zsh/raw/master/tools/install.sh) --keep-zshrc"; \      
+    else \
+      sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --keep-zshrc"; \
+    fi; \
     sed -i -r 's/^plugins=\(.*?\)$/plugins=(laravel composer)/' /home/cantor/.zshrc && \
     echo '\n\
 bindkey "^[OB" down-line-or-search\n\
