@@ -4,6 +4,7 @@ ARG BASE_IMAGE_TAG_PREFIX=latest
 FROM laradock/php-fpm:${BASE_IMAGE_TAG_PREFIX}-${CANTOR_PHP_VERSION}
 
 ARG CANTOR_PHP_VERSION
+ARG GITHUB_CLONE_DOMAIN=github.com
 
 # Set Environment Variables
 ENV DEBIAN_FRONTEND noninteractive
@@ -362,7 +363,7 @@ RUN if [ ${INSTALL_CASSANDRA} = true ]; then \
       dpkg -i cassandra-cpp-driver-dev.deb && \
       rm libuv1.deb libuv1-dev.deb cassandra-cpp-driver-dev.deb cassandra-cpp-driver.deb && \
       cd /usr/src && \
-      git clone https://github.com/datastax/php-driver.git && \
+      git clone https://${GITHUB_CLONE_DOMAIN}/datastax/php-driver.git && \
       cd /usr/src/php-driver/ext && \
       phpize && \
       mkdir /usr/src/php-driver/build && \
@@ -385,7 +386,7 @@ ARG INSTALL_GEARMAN=false
 RUN if [ ${INSTALL_GEARMAN} = true ]; then \
     apt-get -y install libgearman-dev && \
     cd /tmp && \
-    curl -L https://github.com/wcgallego/pecl-gearman/archive/gearman-2.0.5.zip -O && \
+    curl -L https://${GITHUB_CLONE_DOMAIN}/wcgallego/pecl-gearman/archive/gearman-2.0.5.zip -O && \
     unzip gearman-2.0.5.zip && \
     mv pecl-gearman-gearman-2.0.5 pecl-gearman && \
     cd /tmp/pecl-gearman && \
@@ -583,9 +584,9 @@ RUN if [ ${INSTALL_IMAGEMAGICK} = true ]; then \
     if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
       cd /tmp && \
       if [ ${IMAGEMAGICK_VERSION} = "latest" ]; then \
-        git clone https://github.com/Imagick/imagick; \
+        git clone https://${GITHUB_CLONE_DOMAIN}/Imagick/imagick; \
       else \
-        git clone --branch ${IMAGEMAGICK_VERSION} https://github.com/Imagick/imagick; \
+        git clone --branch ${IMAGEMAGICK_VERSION} https://${GITHUB_CLONE_DOMAIN}/Imagick/imagick; \
       fi && \
       cd imagick && \
       phpize && \
@@ -776,9 +777,9 @@ ARG INSTALL_AUDIOWAVEFORM=false
 RUN if [ ${INSTALL_AUDIOWAVEFORM} = true ]; then \
    apt-get -y install wget make cmake gcc g++ libmad0-dev libid3tag0-dev libsndfile1-dev libgd-dev libboost-filesystem-dev libboost-program-options-dev libboost-regex-dev \
    && cd /tmp \
-   && git clone https://github.com/bbc/audiowaveform.git \
+   && git clone https://${GITHUB_CLONE_DOMAIN}/bbc/audiowaveform.git \
    && cd audiowaveform \
-   && git clone --depth=1 https://github.com/google/googletest.git -b release-1.11.0 \
+   && git clone --depth=1 https://${GITHUB_CLONE_DOMAIN}/google/googletest.git -b release-1.11.0 \
    && mkdir build \
    && cd build \
    && cmake .. \
@@ -821,10 +822,10 @@ RUN if [ ${INSTALL_WKHTMLTOPDF} = true ]; then \
       wget \
     # && cat /etc/os-release \
     && if [ ${CANTOR_PHP_VERSION} = "8.0" ]; then \
-      wget "https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.bullseye_${ARCH}.deb"; \
+      wget "https://${GITHUB_CLONE_DOMAIN}/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.bullseye_${ARCH}.deb"; \
       dpkg -i "wkhtmltox_${WKHTMLTOPDF_VERSION}.bullseye_${ARCH}.deb"; \
     else \
-      wget "https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.bookworm_${ARCH}.deb"; \
+      wget "https://${GITHUB_CLONE_DOMAIN}/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.bookworm_${ARCH}.deb"; \
       dpkg -i "wkhtmltox_${WKHTMLTOPDF_VERSION}.bookworm_${ARCH}.deb"; \
     fi \
 ;fi
@@ -916,7 +917,7 @@ RUN set -eux; \
     if [ ${INSTALL_ZOOKEEPER} = true ]; then \
     apt install -yqq libzookeeper-mt-dev; \
     if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-      curl -L -o /tmp/php-zookeeper.tar.gz https://github.com/php-zookeeper/php-zookeeper/archive/master.tar.gz; \
+      curl -L -o /tmp/php-zookeeper.tar.gz https://${GITHUB_CLONE_DOMAIN}/php-zookeeper/php-zookeeper/archive/master.tar.gz; \
       mkdir -p /tmp/php-zookeeper; \
       tar -C /tmp/php-zookeeper -zxvf /tmp/php-zookeeper.tar.gz --strip 1; \
       cd /tmp/php-zookeeper; \
@@ -960,7 +961,7 @@ ARG INSTALL_SSDB=false
 RUN set -xe; \
     if [ ${INSTALL_SSDB} = true ] && [ $(php -r "echo PHP_MAJOR_VERSION;") != "8" ]; then \
     apt-get -y install sudo wget \
-    && curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/master.tar.gz \
+    && curl -L -o /tmp/ssdb-client-php.tar.gz https://${GITHUB_CLONE_DOMAIN}/jonnywang/phpssdb/archive/master.tar.gz \
     && mkdir -p /tmp/ssdb-client-php \
     && tar -C /tmp/ssdb-client-php -zxvf /tmp/ssdb-client-php.tar.gz --strip 1 \
     && cd /tmp/ssdb-client-php \
@@ -1008,7 +1009,7 @@ ARG INSTALL_ZMQ=false
 
 RUN if [ ${INSTALL_ZMQ} = true ]; then \
     apt-get install --yes git libzmq3-dev \
-    && git clone https://github.com/zeromq/php-zmq.git \
+    && git clone https://${GITHUB_CLONE_DOMAIN}/zeromq/php-zmq.git \
     && cd php-zmq \
     && phpize \
     && ./configure \
@@ -1029,7 +1030,7 @@ ARG INSTALL_EVENT=false
 
 RUN set -eux; \
   if [ ${INSTALL_EVENT} = true ]; then \
-      curl -L -o  /tmp/libevent.tar.gz https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz   &&\
+      curl -L -o  /tmp/libevent.tar.gz https://${GITHUB_CLONE_DOMAIN}/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz   &&\
       mkdir -p /tmp/libevent-php &&\
       tar -C /tmp/libevent-php -zxvf /tmp/libevent.tar.gz --strip 1 &&\
       cd /tmp/libevent-php &&\

@@ -9,6 +9,7 @@ ARG BASE_IMAGE_TAG_PREFIX=latest
 FROM laradock/workspace:${BASE_IMAGE_TAG_PREFIX}-${CANTOR_PHP_VERSION}
 
 ARG CANTOR_PHP_VERSION
+ARG GITHUB_CLONE_DOMAIN=github.com
 
 # Set Environment Variables
 ENV DEBIAN_FRONTEND noninteractive
@@ -205,7 +206,7 @@ ENV DRUSH_VERSION ${DRUSH_VERSION}
 RUN if [ ${INSTALL_DRUSH} = true ]; then \
     apt-get -qq -y install mysql-client && \
     # Install Drush with the phar file.
-    curl -fsSL -o /usr/local/bin/drush https://github.com/drush-ops/drush/releases/download/${DRUSH_VERSION}/drush.phar | bash && \
+    curl -fsSL -o /usr/local/bin/drush https://${GITHUB_CLONE_DOMAIN}/drush-ops/drush/releases/download/${DRUSH_VERSION}/drush.phar | bash && \
     chmod +x /usr/local/bin/drush && \
     drush core-status \
 ;fi
@@ -461,7 +462,7 @@ RUN if [ ${INSTALL_CASSANDRA} = true ]; then \
       dpkg -i cassandra-cpp-driver-dev.deb && \
       rm libuv1.deb libuv1-dev.deb cassandra-cpp-driver-dev.deb cassandra-cpp-driver.deb && \
       cd /usr/src && \
-      git clone https://github.com/datastax/php-driver.git && \
+      git clone https://${GITHUB_CLONE_DOMAIN}/datastax/php-driver.git && \
       cd /usr/src/php-driver/ext && \
       phpize && \
       mkdir /usr/src/php-driver/build && \
@@ -615,7 +616,7 @@ ARG INSTALL_DRUPAL_CONSOLE=false
 
 RUN if [ ${INSTALL_DRUPAL_CONSOLE} = true ]; then \
     apt-get -y install mysql-client && \
-    curl https://github.com/hechoendrupal/drupal-console-launcher/releases/download/1.9.7/drupal.phar -L -o drupal.phar && \
+    curl https://${GITHUB_CLONE_DOMAIN}/hechoendrupal/drupal-console-launcher/releases/download/1.9.7/drupal.phar -L -o drupal.phar && \
     mv drupal.phar /usr/local/bin/drupal && \
     chmod +x /usr/local/bin/drupal \
 ;fi
@@ -873,7 +874,7 @@ RUN if [ ${INSTALL_LINUXBREW} = true ]; then \
       libbz2-dev libcurl4-openssl-dev \
       libexpat-dev libncurses-dev && \
     # Install the Linuxbrew
-    git clone --depth=1 https://github.com/Homebrew/linuxbrew.git ~/.linuxbrew && \
+    git clone --depth=1 https://${GITHUB_CLONE_DOMAIN}/Homebrew/linuxbrew.git ~/.linuxbrew && \
     echo "" >> ~/.bashrc && \
     echo 'export PKG_CONFIG_PATH"=/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib64/pkgconfig:/usr/share/pkgconfig:$PKG_CONFIG_PATH"' >> ~/.bashrc && \
     # Setup linuxbrew
@@ -1040,9 +1041,9 @@ RUN if [ ${INSTALL_IMAGEMAGICK} = true ]; then \
       apt-get install -y git && \
       cd /tmp && \
       if [ ${IMAGEMAGICK_VERSION} = "latest" ]; then \
-        git clone https://github.com/Imagick/imagick; \
+        git clone https://${GITHUB_CLONE_DOMAIN}/Imagick/imagick; \
       else \
-        git clone --branch ${IMAGEMAGICK_VERSION} https://github.com/Imagick/imagick; \
+        git clone --branch ${IMAGEMAGICK_VERSION} https://${GITHUB_CLONE_DOMAIN}/Imagick/imagick; \
       fi && \
       cd imagick && \
       phpize && \
@@ -1225,9 +1226,9 @@ ARG INSTALL_AUDIOWAVEFORM=false
 RUN if [ ${INSTALL_AUDIOWAVEFORM} = true ]; then \
   apt-get -y install wget make cmake gcc g++ libmad0-dev libid3tag0-dev libsndfile1-dev libgd-dev libboost-filesystem-dev libboost-program-options-dev libboost-regex-dev \
   && cd /tmp \
-  && git clone https://github.com/bbc/audiowaveform.git \
+  && git clone https://${GITHUB_CLONE_DOMAIN}/bbc/audiowaveform.git \
   && cd audiowaveform \
-  && git clone --depth=1 https://github.com/google/googletest.git -b release-1.11.0 \
+  && git clone --depth=1 https://${GITHUB_CLONE_DOMAIN}/google/googletest.git -b release-1.11.0 \
   && mkdir build \
   && cd build \
   && cmake .. \
@@ -1268,7 +1269,7 @@ RUN if [ ${INSTALL_WKHTMLTOPDF} = true ]; then \
    xfonts-base \
    xfonts-75dpi \
    wget \
-   && wget "https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.focal_${ARCH}.deb" \
+   && wget "https://${GITHUB_CLONE_DOMAIN}/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.focal_${ARCH}.deb" \
    && dpkg -i "wkhtmltox_${WKHTMLTOPDF_VERSION}.focal_${ARCH}.deb" \
    && apt -f install \
 ;fi
@@ -1304,7 +1305,7 @@ ARG INSTALL_GIT_PROMPT=false
 COPY git-prompt.sh /tmp/git-prompt
 
 RUN if [ ${INSTALL_GIT_PROMPT} = true ]; then \
-    git clone https://github.com/magicmonty/bash-git-prompt.git /root/.bash-git-prompt --depth=1 && \
+    git clone https://${GITHUB_CLONE_DOMAIN}/magicmonty/bash-git-prompt.git /root/.bash-git-prompt --depth=1 && \
     cat /tmp/git-prompt >> /root/.bashrc && \
     rm /tmp/git-prompt \
 ;fi
@@ -1345,7 +1346,7 @@ RUN if [ ${INSTALL_PROTOC} = true ]; then \
     REAL_PROTOC_VERSION=${PROTOC_VERSION}; \
   fi && \
   PROTOC_ZIP=protoc-${REAL_PROTOC_VERSION}-linux-x86_64.zip; \
-  wget https://github.com/protocolbuffers/protobuf/releases/download/v${REAL_PROTOC_VERSION}/${PROTOC_ZIP} && \
+  wget https://${GITHUB_CLONE_DOMAIN}/protocolbuffers/protobuf/releases/download/v${REAL_PROTOC_VERSION}/${PROTOC_ZIP} && \
   unzip -q -o ${PROTOC_ZIP} -d /usr/local bin/protoc && \
   unzip -q -o ${PROTOC_ZIP} -d /usr/local 'include/*' && \
   rm -f ${PROTOC_ZIP} && \
@@ -1395,7 +1396,7 @@ bindkey "^[[5~" up-line-or-history\n\
 bindkey "^[[6~" down-line-or-history\n\
 bindkey "^?" backward-delete-char\n' >> /home/cantor/.zshrc && \
   if [ ${SHELL_OH_MY_ZSH_AUTOSUGESTIONS} = true ]; then \
-    sh -c "git clone https://github.com/zsh-users/zsh-autosuggestions /home/cantor/.oh-my-zsh/custom/plugins/zsh-autosuggestions" && \
+    sh -c "git clone https://${GITHUB_CLONE_DOMAIN}/zsh-users/zsh-autosuggestions /home/cantor/.oh-my-zsh/custom/plugins/zsh-autosuggestions" && \
     sed -i 's~plugins=(~plugins=(zsh-autosuggestions ~g' /home/cantor/.zshrc && \
     sed -i '1iZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20' /home/cantor/.zshrc && \
     sed -i '1iZSH_AUTOSUGGEST_STRATEGY=(history completion)' /home/cantor/.zshrc && \
@@ -1468,7 +1469,7 @@ RUN set -eux; \
     if [ ${INSTALL_ZOOKEEPER} = true ]; then \
     apt install -yqq libzookeeper-mt-dev; \
     if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-      curl -L -o /tmp/php-zookeeper.tar.gz https://github.com/php-zookeeper/php-zookeeper/archive/master.tar.gz; \
+      curl -L -o /tmp/php-zookeeper.tar.gz https://${GITHUB_CLONE_DOMAIN}/php-zookeeper/php-zookeeper/archive/master.tar.gz; \
       mkdir -p /tmp/php-zookeeper; \
       tar -C /tmp/php-zookeeper -zxvf /tmp/php-zookeeper.tar.gz --strip 1; \
       cd /tmp/php-zookeeper; \
@@ -1492,7 +1493,7 @@ ARG INSTALL_SSDB=false
 RUN set -xe; \
     if [ ${INSTALL_SSDB} = true ] && [ $(php -r "echo PHP_MAJOR_VERSION;") != "8" ]; then \
     apt-get -y install sudo wget \
-    && curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/master.tar.gz \
+    && curl -L -o /tmp/ssdb-client-php.tar.gz https://${GITHUB_CLONE_DOMAIN}/jonnywang/phpssdb/archive/master.tar.gz \
     && mkdir -p /tmp/ssdb-client-php \
     && tar -C /tmp/ssdb-client-php -zxvf /tmp/ssdb-client-php.tar.gz --strip 1 \
     && cd /tmp/ssdb-client-php \
@@ -1530,7 +1531,7 @@ ARG INSTALL_ZMQ=false
 
 RUN if [ ${INSTALL_ZMQ} = true ]; then \
     apt-get install --yes git libzmq3-dev \
-    && git clone https://github.com/zeromq/php-zmq.git \
+    && git clone https://${GITHUB_CLONE_DOMAIN}/zeromq/php-zmq.git \
     && cd php-zmq \
     && phpize \
     && ./configure \
@@ -1551,7 +1552,7 @@ ARG INSTALL_EVENT=false
 
 RUN set -eux; \
   if [ ${INSTALL_EVENT} = true ]; then \
-      curl -L -o  /tmp/libevent.tar.gz https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz   &&\
+      curl -L -o  /tmp/libevent.tar.gz https://${GITHUB_CLONE_DOMAIN}/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz   &&\
       mkdir -p /tmp/libevent-php &&\
       tar -C /tmp/libevent-php -zxvf /tmp/libevent.tar.gz --strip 1 &&\
       cd /tmp/libevent-php &&\

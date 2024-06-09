@@ -8,6 +8,7 @@ ARG CANTOR_PHP_VERSION
 FROM php:${CANTOR_PHP_VERSION}-alpine
 
 ARG CANTOR_PHP_VERSION
+ARG GITHUB_CLONE_DOMAIN=github.com
 
 # If you're in China, or you need to change sources, will be set USE_MIRRORS to true in .env.
 
@@ -101,25 +102,21 @@ ARG IMAGEMAGICK_VERSION=latest
 ENV IMAGEMAGICK_VERSION ${IMAGEMAGICK_VERSION}
 RUN set -eux; \
   if [ ${INSTALL_IMAGEMAGICK} = true ]; then \
-  apk add --update --no-cache imagemagick-dev imagemagick; \
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-  cd /tmp && \
-  if [ ${IMAGEMAGICK_VERSION} = "latest" ]; then \
-  git clone https://github.com/Imagick/imagick; \
-  else \
-  git clone --branch ${IMAGEMAGICK_VERSION} https://github.com/Imagick/imagick; \
-  fi && \
-  cd imagick && \
-  phpize && \
-  ./configure && \
-  make && \
-  make install && \
-  rm -r /tmp/imagick; \
-  else \
-  pecl install imagick; \
-  fi && \
-  docker-php-ext-enable imagick; \
-  php -m | grep -q 'imagick'; \
+    apk add --update --no-cache imagemagick-dev imagemagick; \
+    cd /tmp && \
+    if [ ${IMAGEMAGICK_VERSION} = "latest" ]; then \
+      git clone https://${GITHUB_CLONE_DOMAIN}/Imagick/imagick; \
+    else \
+      git clone --branch ${IMAGEMAGICK_VERSION} https://${GITHUB_CLONE_DOMAIN}/Imagick/imagick; \
+    fi && \
+    cd imagick && \
+    phpize && \
+    ./configure && \
+    make && \
+    make install && \
+    rm -r /tmp/imagick; \
+    docker-php-ext-enable imagick; \
+    php -m | grep -q 'imagick'; \
   fi
 
 #Install GMP package:
@@ -177,7 +174,7 @@ ARG INSTALL_AUDIOWAVEFORM=false
 RUN if [ ${INSTALL_AUDIOWAVEFORM} = true ]; then \
    apk add git make cmake gcc g++ libmad-dev libid3tag-dev libsndfile-dev gd-dev boost-dev libgd libpng-dev zlib-dev \
    && apk add autoconf automake libtool gettext \
-   && wget https://github.com/xiph/flac/archive/1.3.3.tar.gz \
+   && wget https://${GITHUB_CLONE_DOMAIN}/xiph/flac/archive/1.3.3.tar.gz \
    && tar xzf 1.3.3.tar.gz \
    && cd flac-1.3.3 \
    && ./autogen.sh \
@@ -185,9 +182,9 @@ RUN if [ ${INSTALL_AUDIOWAVEFORM} = true ]; then \
    && make \
    && make install \
    && cd .. \
-   && git clone https://github.com/bbc/audiowaveform.git \
+   && git clone https://${GITHUB_CLONE_DOMAIN}/bbc/audiowaveform.git \
    && cd audiowaveform \
-   && wget https://github.com/google/googletest/archive/release-1.10.0.tar.gz \
+   && wget https://${GITHUB_CLONE_DOMAIN}/google/googletest/archive/release-1.10.0.tar.gz \
    && tar xzf release-1.10.0.tar.gz \
    && ln -s googletest-release-1.10.0/googletest googletest \
    && ln -s googletest-release-1.10.0/googlemock googlemock \
@@ -241,7 +238,7 @@ RUN if [ ${INSTALL_CASSANDRA} = true ]; then \
   apk add --update --no-cache cassandra-cpp-driver libuv gmp \
   && apk add --update --no-cache cassandra-cpp-driver-dev gmp-dev --virtual .build-sec \
   && cd /usr/src \
-  && git clone https://github.com/datastax/php-driver.git \
+  && git clone https://${GITHUB_CLONE_DOMAIN}/datastax/php-driver.git \
   && cd php-driver/ext \
   && phpize \
   && mkdir -p /usr/src/php-driver/build \
@@ -407,7 +404,7 @@ ARG INSTALL_SSDB=false
 RUN set -xe; \
   if [ ${INSTALL_SSDB} = true ] && [ $(php -r "echo PHP_MAJOR_VERSION;") != "8" ]; then \
     apk --update add sudo wget \
-    && curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/master.tar.gz \
+    && curl -L -o /tmp/ssdb-client-php.tar.gz https://${GITHUB_CLONE_DOMAIN}/jonnywang/phpssdb/archive/master.tar.gz \
     && mkdir -p /tmp/ssdb-client-php \
     && tar -C /tmp/ssdb-client-php -zxvf /tmp/ssdb-client-php.tar.gz --strip 1 \
     && cd /tmp/ssdb-client-php \
@@ -441,7 +438,7 @@ ARG INSTALL_EVENT=false
 
 RUN set -eux; \
   if [ ${INSTALL_EVENT} = true ]; then \
-      curl -L -o  /tmp/libevent.tar.gz https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz   &&\
+      curl -L -o  /tmp/libevent.tar.gz https://${GITHUB_CLONE_DOMAIN}/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz   &&\
       mkdir -p /tmp/libevent-php &&\
       tar -C /tmp/libevent-php -zxvf /tmp/libevent.tar.gz --strip 1 &&\
       cd /tmp/libevent-php &&\
