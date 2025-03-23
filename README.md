@@ -11,11 +11,6 @@ A set of docker-compose config to setup a development environment or setup a lig
 ```shell
     cp .env.example .env
 ```
-3. edit `.env` set new `COMPOSE_PROJECT_NAME` like bollow.
-```yaml
-# Define the prefix of container names. This is useful if you have multiple projects that use cantor to have separate containers per project.
-COMPOSE_PROJECT_NAME=some_project_cantor
-```
 
 ## Use for project 
 1. clone cantor to project dir
@@ -29,8 +24,14 @@ COMPOSE_PROJECT_NAME=some_project_cantor
 3. edit `.env` set new `COMPOSE_PROJECT_NAME` like bollow.
 ```yaml
 # Define the prefix of container names. This is useful if you have multiple projects that use cantor to have separate containers per project.
-COMPOSE_PROJECT_NAME=some_project_cantor
+COMPOSE_PROJECT_NAME=some_project
 ```
+
+# Create Mutiple Database When Posgres Init
+create new init_xxx_db.sh in 'postgres/docker-entrypoint-initdb.d' dir.
+
+# Run Mutiple Instance of PHPWorker
+...
 
 ## License
 
